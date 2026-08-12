@@ -1,0 +1,60 @@
+# DANH SÁCH CÁC VIỆC CẦN LÀM Ở PHẦN BACKEND (TLaundry)
+
+## 1. Cơ sở dữ liệu & Cấu trúc Mô hình Dữ liệu (Database & Data Modeling)
+- [x] Lựa chọn & Kết nối CSDL: Tích hợp MongoDB (dùng mongoose) hoặc PostgreSQL/MySQL (dùng Prisma hoặc TypeORM).
+- [x] Định nghĩa Schemas / Data Models:
+  - User: Lưu thông tin khách hàng, nhân viên, quản trị viên (Admin).
+  - Booking / Order: Mã đơn, khách hàng, các dịch vụ đã chọn, địa chỉ lấy/giao hàng, ngày giờ hẹn, ghi chú, trạng thái đơn (PENDING, CONFIRMED, PICKED_UP, WASHING, DELIVERING, COMPLETED, CANCELLED).
+  - Contact: Họ tên, email, sđt, tiêu đề, nội dung liên hệ.
+  - GiftCard: Mã thẻ (code), mệnh giá, người mua, người nhận, trạng thái đã sử dụng hay chưa.
+  - Service & Pricing: Lưu danh mục dịch vụ và bảng giá động trên DB.
+
+## 2. Kết nối API với Frontend (RESTful APIs Integration)
+- [x] API Đặt dịch vụ (POST /api/bookings): Tiếp nhận dữ liệu từ BookingPage.jsx, validate thông tin, lưu đơn vào CSDL và trả về mã đơn hàng.
+- [x] API Gửi liên hệ (POST /api/contact): Nhận dữ liệu từ form ContactPage.jsx, lưu vào CSDL.
+- [x] API Đặt thẻ quà tặng (POST /api/gift-cards): Tiếp nhận thông tin mua thẻ từ GiftCardPage.jsx, sinh mã code ngẫu nhiên (ví dụ: TL-889922).
+- [x] API Đăng ký nhận tin (POST /api/newsletter): Lưu email từ Footer để gửi khuyến mãi.
+- [x] API Lấy bảng giá & dịch vụ (GET /api/services, GET /api/pricing): Trả về dữ liệu dịch vụ để Frontend render động.
+
+## 3. Xác thực & Phân quyền (Authentication & Authorization)
+- [x] Hệ thống Đăng ký / Đăng nhập:
+  - Đăng ký / Đăng nhập khách hàng & Admin (mã hóa mật khẩu bằng bcryptjs).
+  - Cấp phát & kiểm tra JWT (JSON Web Token) / Refresh Token.
+- [x] Phân quyền (RBAC - Role Based Access Control):
+  - Khách hàng: Xem lịch sử đơn hàng cá nhân, theo dõi trạng thái đơn giặt của mình.
+  - Admin / Staff: Truy cập được toàn bộ các API quản trị hệ thống.
+
+## 4. Trang Quản trị Admin (Admin Portal APIs)
+- [x] API Quản lý Đơn hàng:
+  - Lấy danh sách đơn giặt (có phân trang, lọc theo ngày, theo trạng thái).
+  - Cập nhật trạng thái đơn giặt (Chuyển trạng thái: Đã lấy đồ -> Đang giặt -> Đang giao -> Hoàn thành).
+- [x] API Dashboard & Thống kê:
+  - Thống kê tổng số đơn hàng trong ngày/tháng, tổng doanh thu, số lượng thẻ quà tặng đã bán.
+- [x] API Quản lý Khách hàng & Phản hồi:
+  - Xem danh sách lời nhắn liên hệ, cập nhật đánh dấu đã xử lý.
+
+## 5. Dịch vụ Thông báo & Email (Notification & Email Service)
+- [x] Tích hợp Mail Server (Nodemailer + Gmail SMTP):
+  - Gửi email xác nhận đơn giặt thành công tự động kèm mã đơn + chi tiết lịch hẹn cho khách.
+  - Gửi email thông báo tức thì đến chủ cửa hàng/quản lý khi có đơn giặt mới.
+  - Gửi email chứa mã Gift Card + lời chúc đến người nhận thẻ quà tặng.
+- [ ] (Nâng cao) Tích hợp Zalo ZNS / SMS: Nhắn tin tự động nhắc lịch nhận/giao đồ giặt cho khách hàng.
+
+## 6. Tích hợp Cổng Thanh Toán (Payment Gateway Integration)
+- [ ] Tích hợp cổng thanh toán trực tuyến (MoMo, VNPay, ZaloPay hoặc Stripe):
+  - Cho phép khách hàng thanh toán trước tiền đơn giặt hoặc mua Thẻ quà tặng.
+- [ ] Xử lý Webhook Thanh toán: Lắng hệ phản hồi từ cổng thanh toán để tự động xác nhận đơn đã được trả tiền (PAID).
+
+## 7. Bảo mật & Xử lý Chuẩn hóa (Security & Production Hardening)
+- [ ] Bảo vệ dữ liệu đầu vào (Validation & Sanitization): Dùng Zod hoặc express-validator để kiểm tra độ dài SĐT, định dạng Email, tránh SQL/NoSQL Injection.
+- [ ] Quản lý Cấu hình Môi trường: Chuyển toàn bộ key nhạy cảm (DB URI, JWT Secret, Mail Pass, Port) vào file .env (dùng dotenv).
+- [ ] Bảo mật Server:
+  - cors: Chỉ cho phép domain Frontend truy cập API.
+  - express-rate-limit: Chống việc người dùng spam bấm gửi form liên tục.
+  - helmet: Tự động thêm các HTTP header bảo mật.
+- [ ] Centralized Error Handling: Viết Middleware xử lý lỗi tập trung để server không bị crash đột ngột.
+
+## 8. Logging, Testing & Triển khai (Deployment)
+- [ ] Ghi Log (Logging): Cài đặt morgan hoặc winston để theo dõi các API bị lỗi hoặc request bất thường.
+- [ ] Viết Unit/Integration Test: Dùng Jest + Supertest để test các API quan trọng (đặt đơn, đăng nhập, thanh toán).
+- [ ] Deploy Backend: Đưa server backend lên Render, Railway, Vercel hoặc VPS kèm HTTPS/SSL.

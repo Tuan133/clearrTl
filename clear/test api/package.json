@@ -1,0 +1,12 @@
+{
+  "name": "tlaundry-test-api",
+  "version": "1.0.0",
+  "description": "API Test Suite for TLaundry",
+  "type": "module",
+  "scripts": {
+    "test": "node testAllAPIs.js",
+    "test:forms": "node testAllForms.js",
+    "test:integration": "node testApiIntegration.js",
+    "test:security": "node testSecurity.js"
+  }
+}
