@@ -23,9 +23,8 @@ import {
 } from './middleware/auth.js';
 import { seedServicesAndPricing, seedDemoUsers } from './seedData.js';
 import {
-  sendBookingConfirmationToCustomer,
-  sendNewBookingAlertToAdmin,
-  sendGiftCardToRecipient
+  sendBookingConfirmation,   // Luồng duy nhất: To=khách, BCC=admin, Gift Card tùy chọn
+  sendGiftCardToRecipient    // Gửi gift card độc lập (không kèm booking)
 } from './services/emailService.js';
 
 
@@ -492,11 +491,9 @@ app.post('/api/bookings', async (req, res) => {
 
     console.log(`✅ New Booking Saved: OrderCode [${newBooking.orderCode}] UserID [${userId || 'guest'}]`);
 
-    // 📧 Gửi email bất đồng bộ (fire-and-forget) — không block API response
-    Promise.all([
-      sendBookingConfirmationToCustomer(newBooking),
-      sendNewBookingAlertToAdmin(newBooking)
-    ]).catch(err => console.error('❌ [Email] Unexpected error in booking emails:', err.message));
+    // 📧 1 email duy nhất: To=khách xác nhận đơn, BCC=admin tự động — fire-and-forget
+    sendBookingConfirmation(newBooking, null)
+      .catch(err => console.error('❌ [Email] Unexpected error in booking email:', err.message));
 
     res.status(201).json({
       success: true,
