@@ -74,16 +74,77 @@ const HomePage = () => {
       {/* ===== HERO ===== */}
       <section className="hero">
         <div className="container">
-          <div className="hero-content">
-            <h1>
-              {t.hero.title1}{' '}
-              <span>{t.hero.title2}</span>{' '}
-              {t.hero.title3}
-            </h1>
-            <p>{t.hero.subtitle}</p>
-            <button className="hero-btn" onClick={() => navigate('/booking')}>
-              {t.hero.btnQuote}
-            </button>
+          <div className="hero-grid">
+
+            {/* ── Cột trái: nội dung chính ── */}
+            <div className="hero-content">
+              <h1>
+                {t.hero.title1}{' '}
+                <span>{t.hero.title2}</span>{' '}
+                {t.hero.title3}
+              </h1>
+              <p>{t.hero.subtitle}</p>
+              <button className="hero-btn" onClick={() => navigate('/booking')}>
+                {t.hero.btnQuote}
+              </button>
+            </div>
+
+            {/* ── Cột phải: Quick Booking Card ── */}
+            <div className="hero-card">
+              <div className="hero-card-title">
+                {lang === 'vi' ? '📦 Đặt Dịch Vụ Nhanh' : '📦 Quick Booking'}
+              </div>
+              <div className="hero-card-sub">
+                {lang === 'vi' ? 'Nhận & Giao tận nơi trong 24h' : 'Pickup & Delivery within 24h'}
+              </div>
+
+              <div className="hero-card-form">
+                <div className="hero-card-field">
+                  <label>{lang === 'vi' ? 'Dịch vụ' : 'Service'}</label>
+                  <select onClick={(e) => e.stopPropagation()} onChange={(e) => {
+                    if (e.target.value) navigate('/booking');
+                  }}>
+                    <option value="">{lang === 'vi' ? '— Chọn dịch vụ —' : '— Select service —'}</option>
+                    <option>{lang === 'vi' ? 'Giặt & Sấy Gia Đình' : 'Domestic Wash & Dry'}</option>
+                    <option>{lang === 'vi' ? 'Giặt Thương Mại' : 'Commercial Laundry'}</option>
+                    <option>{lang === 'vi' ? 'Giặt Ủi' : 'Wash & Iron'}</option>
+                    <option>{lang === 'vi' ? 'Giặt Khô' : 'Dry Cleaning'}</option>
+                  </select>
+                </div>
+
+                <div className="hero-card-field">
+                  <label>{lang === 'vi' ? 'Địa chỉ lấy hàng' : 'Pickup address'}</label>
+                  <input
+                    type="text"
+                    placeholder={lang === 'vi' ? 'Nhập địa chỉ của bạn…' : 'Enter your address…'}
+                    onFocus={(e) => { e.target.placeholder = ''; }}
+                    onBlur={(e) => { e.target.placeholder = lang === 'vi' ? 'Nhập địa chỉ của bạn…' : 'Enter your address…'; }}
+                  />
+                </div>
+
+                <div className="hero-card-divider" />
+
+                <button className="hero-card-btn" onClick={() => navigate('/booking')}>
+                  {lang === 'vi' ? 'Yêu Cầu Báo Giá Miễn Phí →' : 'Get a Free Quote →'}
+                </button>
+              </div>
+
+              <div className="hero-card-badges">
+                <span className="hero-card-badge">
+                  <span className="hero-card-badge-dot" />
+                  {lang === 'vi' ? 'Báo giá miễn phí' : 'Free quote'}
+                </span>
+                <span className="hero-card-badge">
+                  <span className="hero-card-badge-dot" />
+                  {lang === 'vi' ? 'Giao trong 24h' : '24h delivery'}
+                </span>
+                <span className="hero-card-badge">
+                  <span className="hero-card-badge-dot" />
+                  {lang === 'vi' ? 'Cam kết chất lượng' : 'Quality guaranteed'}
+                </span>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

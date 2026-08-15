@@ -260,8 +260,8 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
-  max-width: 1300px;
+  padding: 20px 32px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -522,18 +522,17 @@ select {
   min-height: 82vh;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   background: linear-gradient(135deg, rgba(4, 110, 110, 0.88) 0%, rgba(6, 180, 180, 0.78) 50%, rgba(4, 130, 130, 0.85) 100%),
     url('https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=1400&q=80') center/cover no-repeat;
   overflow: hidden;
 }
 
 .hero .container {
-  max-width: 1300px;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 40px;
+  padding-right: 40px;
   width: 100%;
 }
 
@@ -544,12 +543,170 @@ select {
   background: radial-gradient(circle at top right, rgba(10, 184, 184, 0.4), transparent 60%);
 }
 
+/* ─── Hero 2-column layout ─── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 48px;
+  align-items: center;
+  width: 100%;
+}
+
 .hero-content {
   position: relative;
   z-index: 2;
   color: var(--white);
-  max-width: 680px;
   text-align: left;
+}
+
+/* ─── Hero Quick Booking Card ─── */
+.hero-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.hero-card-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.hero-card-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 24px;
+}
+
+.hero-card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hero-card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hero-card-field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.hero-card-field select,
+.hero-card-field input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 500;
+  transition: border-color 0.25s ease, background 0.25s ease;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.hero-card-field select option {
+  background: #046e6e;
+  color: white;
+}
+
+.hero-card-field select:focus,
+.hero-card-field input:focus {
+  border-color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.hero-card-field input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hero-card-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 4px 0;
+}
+
+.hero-card-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--primary-dark);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.hero-card-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.hero-card-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-card-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+.hero-card-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7de8e8;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .hero-card {
+    max-width: 500px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .hero-card {
+    padding: 24px;
+  }
 }
 
 .hero h1 {
