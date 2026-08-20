@@ -21,6 +21,18 @@ import {
   generateAccessToken,
   generateRefreshToken
 } from './middleware/auth.js';
+import {
+  validate,
+  registerSchema,
+  loginSchema,
+  changePasswordSchema,
+  bookingSchema,
+  contactSchema,
+  giftCardSchema,
+  newsletterSchema,
+  adminCreateUserSchema,
+} from './middleware/validate.js';
+import errorHandler from './middleware/errorHandler.js';
 import { seedServicesAndPricing, seedDemoUsers } from './seedData.js';
 import {
   sendBookingConfirmation,   // Luồng duy nhất: To=khách, BCC=admin, Gift Card tùy chọn
@@ -114,32 +126,21 @@ app.get('/api/health', (req, res) => {
  * Đăng ký tài khoản mới (Khách hàng)
  * Public - Không cần token
  */
-app.post('/api/auth/register', authLimiter, async (req, res) => {
+app.post('/api/auth/register', authLimiter, validate(registerSchema), async (req, res, next) => {
   try {
+    // req.body đã được validate & sanitize bởi Zod (registerSchema)
     const { name, email, password, phone } = req.body;
 
-    // Validation
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ Họ tên, Email và Mật khẩu!' });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự!' });
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ success: false, message: 'Định dạng email không hợp lệ!' });
-    }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email này đã được sử dụng!' });
+      return res.status(409).json({ success: false, message: 'Email này đã được sử dụng!' });
     }
 
     const user = await User.create({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
+      name,
+      email,
       password,
-      phone: phone?.trim() || '',
+      phone: phone || '',
       role: 'CUSTOMER' // Đăng ký public chỉ tạo CUSTOMER
     });
 
@@ -159,7 +160,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -168,15 +169,12 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
  * Đăng nhập (Khách hàng & Admin)
  * Public - Không cần token
  */
-app.post('/api/auth/login', authLimiter, async (req, res) => {
+app.post('/api/auth/login', authLimiter, validate(loginSchema), async (req, res, next) => {
   try {
+    // req.body đã được validate & sanitize bởi Zod (loginSchema)
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Vui lòng nhập email và mật khẩu!' });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không chính xác!' });
     }
@@ -200,7 +198,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -209,7 +207,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
  * Làm mới Access Token bằng Refresh Token
  * Public - Dùng refreshToken từ body
  */
-app.post('/api/auth/refresh-token', async (req, res) => {
+app.post('/api/auth/refresh-token', async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
@@ -252,7 +250,7 @@ app.post('/api/auth/refresh-token', async (req, res) => {
       refreshToken: newRefreshToken
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -261,12 +259,12 @@ app.post('/api/auth/refresh-token', async (req, res) => {
  * Đăng xuất - Xoá refresh token khỏi DB
  * Protected - Cần Access Token
  */
-app.post('/api/auth/logout', protect, async (req, res) => {
+app.post('/api/auth/logout', protect, async (req, res, next) => {
   try {
     await User.findByIdAndUpdate(req.user._id, { refreshToken: null });
     res.json({ success: true, message: 'Đăng xuất thành công!' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -275,12 +273,12 @@ app.post('/api/auth/logout', protect, async (req, res) => {
  * Lấy thông tin profile của người dùng đang đăng nhập
  * Protected - Cần Access Token
  */
-app.get('/api/auth/me', protect, async (req, res) => {
+app.get('/api/auth/me', protect, async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).select('-password -refreshToken');
     res.json({ success: true, data: user });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -289,7 +287,7 @@ app.get('/api/auth/me', protect, async (req, res) => {
  * Cập nhật thông tin profile cá nhân
  * Protected - Cần Access Token
  */
-app.put('/api/auth/me', protect, async (req, res) => {
+app.put('/api/auth/me', protect, async (req, res, next) => {
   try {
     const { name, phone } = req.body;
     const updateData = {};
@@ -304,7 +302,7 @@ app.put('/api/auth/me', protect, async (req, res) => {
 
     res.json({ success: true, message: 'Cập nhật thông tin thành công!', data: user });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -313,16 +311,10 @@ app.put('/api/auth/me', protect, async (req, res) => {
  * Đổi mật khẩu
  * Protected - Cần Access Token
  */
-app.put('/api/auth/change-password', protect, async (req, res) => {
+app.put('/api/auth/change-password', protect, validate(changePasswordSchema), async (req, res, next) => {
   try {
+    // req.body đã được validate bởi Zod (changePasswordSchema)
     const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới!' });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'Mật khẩu mới phải có ít nhất 6 ký tự!' });
-    }
 
     const user = await User.findById(req.user._id);
     if (!(await user.matchPassword(currentPassword))) {
@@ -334,7 +326,7 @@ app.put('/api/auth/change-password', protect, async (req, res) => {
 
     res.json({ success: true, message: 'Đổi mật khẩu thành công!' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -348,30 +340,21 @@ app.put('/api/auth/change-password', protect, async (req, res) => {
  * Admin tạo tài khoản Staff/Admin mới
  * Protected - ADMIN only
  */
-app.post('/api/admin/users', protect, authorize('ADMIN'), async (req, res) => {
+app.post('/api/admin/users', protect, authorize('ADMIN'), validate(adminCreateUserSchema), async (req, res, next) => {
   try {
+    // req.body đã được validate bởi Zod (adminCreateUserSchema)
     const { name, email, password, phone, role } = req.body;
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ thông tin!' });
-    }
-    if (!['CUSTOMER', 'STAFF', 'ADMIN'].includes(role)) {
-      return res.status(400).json({ success: false, message: 'Role không hợp lệ! Chỉ chấp nhận: CUSTOMER, STAFF, ADMIN' });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự!' });
-    }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email này đã được sử dụng!' });
+      return res.status(409).json({ success: false, message: 'Email này đã được sử dụng!' });
     }
 
     const user = await User.create({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
+      name,
+      email,
       password,
-      phone: phone?.trim() || '',
+      phone: phone || '',
       role
     });
 
@@ -381,7 +364,7 @@ app.post('/api/admin/users', protect, authorize('ADMIN'), async (req, res) => {
       data: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -390,7 +373,7 @@ app.post('/api/admin/users', protect, authorize('ADMIN'), async (req, res) => {
  * Lấy danh sách tất cả users
  * Protected - ADMIN, STAFF
  */
-app.get('/api/admin/users', protect, authorize('ADMIN', 'STAFF'), async (req, res) => {
+app.get('/api/admin/users', protect, authorize('ADMIN', 'STAFF'), async (req, res, next) => {
   try {
     const { role, page = 1, limit = 20 } = req.query;
     const filter = {};
@@ -412,7 +395,7 @@ app.get('/api/admin/users', protect, authorize('ADMIN', 'STAFF'), async (req, re
       data: users
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -421,7 +404,7 @@ app.get('/api/admin/users', protect, authorize('ADMIN', 'STAFF'), async (req, re
  * Khoá / Mở khoá tài khoản người dùng
  * Protected - ADMIN only
  */
-app.put('/api/admin/users/:id/toggle-active', protect, authorize('ADMIN'), async (req, res) => {
+app.put('/api/admin/users/:id/toggle-active', protect, authorize('ADMIN'), async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select('-password -refreshToken');
     if (!user) return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng!' });
@@ -435,7 +418,7 @@ app.put('/api/admin/users/:id/toggle-active', protect, authorize('ADMIN'), async
       data: { id: user._id, name: user.name, email: user.email, role: user.role, isActive: user.isActive }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -449,21 +432,10 @@ app.put('/api/admin/users/:id/toggle-active', protect, authorize('ADMIN'), async
  * Tạo đơn đặt dịch vụ mới
  * Public - Không cần đăng nhập (hoặc tự động liên kết nếu có token)
  */
-app.post('/api/bookings', async (req, res) => {
+app.post('/api/bookings', validate(bookingSchema), async (req, res, next) => {
   try {
-    const { firstName, lastName, email, phone, address, suburb, state, pickupDate, serviceType } = req.body;
-
-    if (!firstName || !lastName || !email || !phone || !address || !suburb || !state || !pickupDate) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng điền đầy đủ các thông tin bắt buộc!'
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ success: false, message: 'Định dạng email không hợp lệ!' });
-    }
+    // req.body đã được validate & sanitize bởi Zod (bookingSchema)
+    const { serviceType } = req.body;
 
     // Tự động liên kết với user nếu có JWT trong header
     let userId = null;
@@ -485,7 +457,6 @@ app.post('/api/bookings', async (req, res) => {
       ...req.body,
       orderCode: randomOrderCode,
       serviceType: serviceType || 'Giặt Ủi Gia Đình',
-      email: email.toLowerCase().trim(),
       userId // sẽ là null nếu khách chưa đăng nhập
     });
 
@@ -502,7 +473,7 @@ app.post('/api/bookings', async (req, res) => {
       data: newBooking
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -511,7 +482,7 @@ app.post('/api/bookings', async (req, res) => {
  * Khách hàng xem lịch sử đơn hàng của chính mình
  * Protected - CUSTOMER (chỉ đơn của mình), ADMIN/STAFF (tất cả đơn theo email)
  */
-app.get('/api/bookings/my-orders', protect, async (req, res) => {
+app.get('/api/bookings/my-orders', protect, async (req, res, next) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
     let filter = {};
@@ -543,7 +514,7 @@ app.get('/api/bookings/my-orders', protect, async (req, res) => {
       data: bookings
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -552,7 +523,7 @@ app.get('/api/bookings/my-orders', protect, async (req, res) => {
  * Theo dõi trạng thái đơn giặt theo mã đơn
  * Public - Có thể xem bằng mã đơn (không cần đăng nhập)
  */
-app.get('/api/bookings/:orderCode/track', async (req, res) => {
+app.get('/api/bookings/:orderCode/track', async (req, res, next) => {
   try {
     const booking = await Booking.findOne({ orderCode: req.params.orderCode });
     if (!booking) {
@@ -566,7 +537,7 @@ app.get('/api/bookings/:orderCode/track', async (req, res) => {
       data: { _id, orderCode, serviceType, status, pickupDate, createdAt, firstName, lastName }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -575,7 +546,7 @@ app.get('/api/bookings/:orderCode/track', async (req, res) => {
  * Admin/Staff xem tất cả đơn hàng (có filter, phân trang)
  * Protected - ADMIN, STAFF only
  */
-app.get('/api/bookings', protect, authorize('ADMIN', 'STAFF'), async (req, res) => {
+app.get('/api/bookings', protect, authorize('ADMIN', 'STAFF'), async (req, res, next) => {
   try {
     const { page = 1, limit = 20, status, startDate, endDate } = req.query;
     const filter = {};
@@ -602,7 +573,7 @@ app.get('/api/bookings', protect, authorize('ADMIN', 'STAFF'), async (req, res) 
       data: bookings
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -611,7 +582,7 @@ app.get('/api/bookings', protect, authorize('ADMIN', 'STAFF'), async (req, res) 
  * Cập nhật trạng thái đơn hàng
  * Protected - ADMIN, STAFF only
  */
-app.put('/api/bookings/:id/status', protect, authorize('ADMIN', 'STAFF'), async (req, res) => {
+app.put('/api/bookings/:id/status', protect, authorize('ADMIN', 'STAFF'), async (req, res, next) => {
   try {
     const { status } = req.body;
     const validStatuses = ['PENDING', 'CONFIRMED', 'PICKED_UP', 'WASHING', 'DELIVERING', 'COMPLETED', 'CANCELLED'];
@@ -630,7 +601,7 @@ app.put('/api/bookings/:id/status', protect, authorize('ADMIN', 'STAFF'), async 
 
     res.json({ success: true, message: 'Cập nhật trạng thái thành công!', data: booking });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -639,30 +610,15 @@ app.put('/api/bookings/:id/status', protect, authorize('ADMIN', 'STAFF'), async 
 // CONTACT APIS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-app.post('/api/contact', async (req, res) => {
+app.post('/api/contact', validate(contactSchema), async (req, res, next) => {
   try {
-    const { name, email, message } = req.body;
-    if (!name || !email || !message) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng điền đầy đủ Họ tên, Email và Nội dung tin nhắn!'
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ success: false, message: 'Định dạng email không hợp lệ!' });
-    }
-
-    const newContact = await Contact.create({
-      ...req.body,
-      email: email.toLowerCase().trim()
-    });
+    // req.body đã được validate & sanitize bởi Zod (contactSchema)
+    const newContact = await Contact.create(req.body);
 
     console.log('✅ New Contact Saved to MongoDB:', newContact._id);
     res.status(201).json({ success: true, message: 'Tin nhắn liên hệ đã được gửi thành công!', data: newContact });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -671,7 +627,7 @@ app.post('/api/contact', async (req, res) => {
  * Lấy danh sách tin nhắn liên hệ (có phân trang, lọc theo trạng thái)
  * Protected - ADMIN, STAFF only
  */
-app.get('/api/contact', protect, authorize('ADMIN', 'STAFF'), async (req, res) => {
+app.get('/api/contact', protect, authorize('ADMIN', 'STAFF'), async (req, res, next) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
     const filter = {};
@@ -692,7 +648,7 @@ app.get('/api/contact', protect, authorize('ADMIN', 'STAFF'), async (req, res) =
       data: contacts
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -701,7 +657,7 @@ app.get('/api/contact', protect, authorize('ADMIN', 'STAFF'), async (req, res) =
  * Đánh dấu tin nhắn liên hệ là đã xử lý
  * Protected - ADMIN, STAFF only
  */
-app.patch('/api/contact/:id/resolve', protect, authorize('ADMIN', 'STAFF'), async (req, res) => {
+app.patch('/api/contact/:id/resolve', protect, authorize('ADMIN', 'STAFF'), async (req, res, next) => {
   try {
     const contact = await Contact.findByIdAndUpdate(
       req.params.id,
@@ -719,7 +675,7 @@ app.patch('/api/contact/:id/resolve', protect, authorize('ADMIN', 'STAFF'), asyn
       data: contact
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -728,7 +684,7 @@ app.patch('/api/contact/:id/resolve', protect, authorize('ADMIN', 'STAFF'), asyn
  * Đánh dấu lại tin nhắn liên hệ là chưa xử lý
  * Protected - ADMIN, STAFF only
  */
-app.patch('/api/contact/:id/unresolve', protect, authorize('ADMIN', 'STAFF'), async (req, res) => {
+app.patch('/api/contact/:id/unresolve', protect, authorize('ADMIN', 'STAFF'), async (req, res, next) => {
   try {
     const contact = await Contact.findByIdAndUpdate(
       req.params.id,
@@ -746,7 +702,7 @@ app.patch('/api/contact/:id/unresolve', protect, authorize('ADMIN', 'STAFF'), as
       data: contact
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -755,22 +711,13 @@ app.patch('/api/contact/:id/unresolve', protect, authorize('ADMIN', 'STAFF'), as
 // GIFT CARD APIS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-app.post('/api/gift-cards', async (req, res) => {
+app.post('/api/gift-cards', validate(giftCardSchema), async (req, res, next) => {
   try {
-    const { amount, recipientName, recipientEmail, senderName, senderEmail, deliveryDate } = req.body;
-    if (!amount || !recipientName || !recipientEmail || !senderName || !senderEmail || !deliveryDate) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng điền đầy đủ thông tin người nhận, người gửi, mệnh giá và ngày giao thẻ!'
-      });
-    }
-
+    // req.body đã được validate & sanitize bởi Zod (giftCardSchema)
     const randomCode = 'TL-' + Math.floor(100000 + Math.random() * 900000);
     const newCard = await GiftCard.create({
       ...req.body,
       code: randomCode,
-      recipientEmail: recipientEmail.toLowerCase().trim(),
-      senderEmail: senderEmail.toLowerCase().trim()
     });
 
     console.log('✅ New GiftCard Saved to MongoDB:', newCard.code);
@@ -786,7 +733,7 @@ app.post('/api/gift-cards', async (req, res) => {
       data: newCard
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -938,29 +885,21 @@ app.get('/api/gift-cards', protect, authorize('ADMIN', 'STAFF'), async (req, res
 // NEWSLETTER APIS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-app.post('/api/newsletter', async (req, res) => {
+app.post('/api/newsletter', validate(newsletterSchema), async (req, res, next) => {
   try {
+    // req.body đã được validate & sanitize bởi Zod (newsletterSchema)
     const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Vui lòng nhập địa chỉ email!' });
-    }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ success: false, message: 'Định dạng email không hợp lệ!' });
-    }
-
-    const cleanEmail = email.toLowerCase().trim();
-    const existing = await Newsletter.findOne({ email: cleanEmail });
+    const existing = await Newsletter.findOne({ email });
     if (existing) {
-      return res.status(400).json({ success: false, message: 'Email này đã đăng ký nhận tin từ trước!' });
+      return res.status(409).json({ success: false, message: 'Email này đã đăng ký nhận tin từ trước!' });
     }
 
-    const subscriber = await Newsletter.create({ email: cleanEmail });
+    const subscriber = await Newsletter.create({ email });
     console.log('✅ New Newsletter Subscriber:', subscriber.email);
     res.status(201).json({ success: true, message: 'Đăng ký nhận thông tin khuyến mãi thành công!' });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   }
 });
 
@@ -992,18 +931,20 @@ app.get('/api/pricing', async (req, res) => {
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// GLOBAL ERROR HANDLER
+// 404 Handler — Route không tồn tại
 // ═══════════════════════════════════════════════════════════════════════════════
-app.use((err, req, res, _next) => {
-  console.error('❌ Server Error:', err.message);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Lỗi máy chủ nội bộ!'
-  });
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route [${req.method}] ${req.originalUrl} không tồn tại!` });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GLOBAL ERROR HANDLER (Centralized — phải đặt SAU tất cả routes)
+// ═══════════════════════════════════════════════════════════════════════════════
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 TLaundry Backend API running at http://localhost:${PORT}`);
   console.log(`🔐 Auth endpoints: /api/auth/register | /api/auth/login | /api/auth/refresh-token`);
   console.log(`🛡️  RBAC: CUSTOMER(my-orders) | ADMIN/STAFF(all endpoints)`);
+  console.log(`🔒 Security: Helmet + CORS + Rate Limit + Mongo Sanitize + Zod Validation`);
 });
