@@ -8,7 +8,6 @@ import mongoSanitize from 'express-mongo-sanitize';
 import connectDB from './config/db.js';
 import Contact from './models/Contact.js';
 import Booking from './models/Booking.js';
-import GiftCard from './models/GiftCard.js';
 import Newsletter from './models/Newsletter.js';
 import Service from './models/Service.js';
 import Pricing from './models/Pricing.js';
@@ -75,19 +74,7 @@ const runAPITests = async () => {
         }
       });
 
-      app.post('/api/gift-cards', async (req, res) => {
-        try {
-          const { amount, recipientName, recipientEmail, senderName, senderEmail, deliveryDate } = req.body;
-          if (!amount || !recipientName || !recipientEmail || !senderName || !senderEmail || !deliveryDate) {
-            return res.status(400).json({ success: false, message: 'Thiếu thông tin' });
-          }
-          const code = 'TL-' + Math.floor(100000 + Math.random() * 900000);
-          const card = await GiftCard.create({ ...req.body, code });
-          res.status(201).json({ success: true, code: card.code, data: card });
-        } catch (e) {
-          res.status(400).json({ success: false, message: e.message });
-        }
-      });
+
 
       app.post('/api/newsletter', async (req, res) => {
         try {
@@ -143,7 +130,6 @@ const runAPITests = async () => {
         passedTests++;
         let detailStr = `Status ${res.status} HTTP OK (${duration}ms)`;
         if (data.orderCode) detailStr += ` | Mã đơn hàng: ${data.orderCode}`;
-        if (data.code) detailStr += ` | Mã GiftCard: ${data.code}`;
         if (data.count !== undefined) detailStr += ` | Tổng số lượng: ${data.count}`;
         formatLog(name, 'SUCCESS', detailStr);
         return { success: true, data };
@@ -183,16 +169,7 @@ const runAPITests = async () => {
     message: 'Shop có dịch vụ giặt rèm tận nhà không?'
   }, 201);
 
-  // 3. Test POST /api/gift-cards (Đặt thẻ quà tặng)
-  await testRequest('3. API Đặt Thẻ Quà Tặng (POST /api/gift-cards)', '/gift-cards', 'POST', {
-    amount: 200,
-    recipientName: 'Lê Thị Mai',
-    recipientEmail: 'mai.le@example.com',
-    senderName: 'Nguyễn Văn Thịnh',
-    senderEmail: 'thinh.nguyen@example.com',
-    message: 'Tặng bạn thẻ quà tặng giặt ủi!',
-    deliveryDate: '2026-08-20'
-  }, 201);
+
 
   // 4. Test POST /api/newsletter (Đăng ký nhận tin)
   const randEmail = `subscriber_${Date.now()}@example.com`;

@@ -1,5 +1,24 @@
-# Logs
-logs
+# ══════════════════════════════════════════════════════════════════
+#  .gitignore — TLaundry Project
+# ══════════════════════════════════════════════════════════════════
+
+# ─── SECRETS & CREDENTIALS (CRITICAL — NEVER COMMIT) ──────────────
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Thêm các pattern phổ biến bị bỏ sót
+*.pem
+*.key
+*.cert
+*.p12
+secrets/
+credentials/
+config/secrets.*
+
+# ─── Logs ─────────────────────────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,20 +26,40 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-.env
-.env.*
+# ─── Dependencies ─────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
 
-# Editor directories and files
+# ─── Build Output ─────────────────────────────────────────────────
+dist/
+dist-ssr/
+build/
+.next/
+out/
+
+# ─── Editor ───────────────────────────────────────────────────────
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
+*.swp
 *.sw?
+
+# ─── OS ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Testing ──────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ─── Misc ─────────────────────────────────────────────────────────
+*.local
+*.bak
+*.tmp

@@ -1,0 +1,447 @@
+═══════════════════════════════════════════════════════════════
+  BÁO CÁO PHÂN TÍCH BẢO MẬT - TLAUNDRY WEB PROJECT
+  Ngày phân tích: 2026-08-20
+  Phân tích bởi: Security Engineer Review (AI-assisted)
+═══════════════════════════════════════════════════════════════
+
+TỔNG QUAN MỨC ĐỘ RỦI RO
+─────────────────────────
+  🔴 CRITICAL   : 2 lỗ hổng
+  🟠 HIGH       : 4 lỗ hổng
+  🟡 MEDIUM     : 5 lỗ hổng
+  🔵 LOW / INFO : 4 lỗ hổng
+  Tổng cộng     : 15 lỗ hổng
+
+
+═══════════════════════════════════════════════════════════════
+  🔴 MỨC ĐỘ: CRITICAL
+═══════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[C-01] CREDENTIALS THẬT BỊ COMMIT VÀO SOURCE CODE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/.env
+Mức độ     : CRITICAL
+CWE        : CWE-312 (Cleartext Storage of Sensitive Information)
+
+Vấn đề:
+  File backend/.env chứa credentials thật được commit vào repository:
+  - MONGO_URI: mongodb+srv://thinhvatuan05_db_user:kERYdALaXWqamcxM@cluster0.bmvv6fy.mongodb.net/...
+    → Lộ username + password của MongoDB Atlas
+  - JWT_SECRET: tlaundry_super_secret_jwt_key_2026_secured_889922
+    → Lộ secret key, attacker có thể forge JWT token tùy ý
+  - JWT_REFRESH_SECRET: tlaundry_refresh_super_secret_key_2026_rt_009988
+    → Lộ refresh secret, attacker forge refresh token vô thời hạn
+  - EMAIL_PASS: tdde ymxq bljj tpfp
+    → Lộ Gmail App Password, attacker gửi email giả danh TLaundry
+
+Tác động:
+  - Attacker có thể đăng nhập trực tiếp vào MongoDB Atlas, đọc/xóa/sửa toàn bộ dữ liệu
+  - Forge JWT token để giả mạo bất kỳ user nào kể cả ADMIN
+  - Gửi email phishing từ địa chỉ thật của hệ thống
+  - Nếu repo từng được push lên GitHub public → credentials đã bị lộ vĩnh viễn
+
+Khắc phục:
+  1. NGAY LẬP TỨC: Rotate tất cả credentials (MongoDB password, JWT secrets, Gmail App Password)
+  2. KHÔNG commit .env chứa giá trị thật. Chỉ commit .env.example với placeholder
+  3. Kiểm tra .gitignore đã có ".env" nhưng cần verify file .env chưa bị staged/committed trước đó
+     → Chạy: git log --all --full-history -- "**/.env" để xem lịch sử
+  4. Dùng secret manager (AWS Secrets Manager, Doppler, Vault) ở production
+  5. JWT_SECRET phải dài ≥64 ký tự random (entropy cao), không phải chuỗi có nghĩa
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[C-02] JWT SECRET YẾU & CÓ THỂ ĐOÁN ĐƯỢC
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/.env, backend/middleware/auth.js (dòng 17)
+Mức độ     : CRITICAL
+CWE        : CWE-330 (Use of Insufficiently Random Values)
+
+Vấn đề:
+  JWT_SECRET = "tlaundry_super_secret_jwt_key_2026_secured_889922"
+  - Là chuỗi có pattern rõ ràng, predictable, không có đủ entropy
+  - JWT_REFRESH_SECRET có fallback nguy hiểm: process.env.JWT_SECRET + '_refresh'
+    → Nếu JWT_REFRESH_SECRET không được set, secret refresh chỉ là JWT_SECRET + "_refresh"
+    → Attacker biết JWT_SECRET có thể tính ra JWT_REFRESH_SECRET
+
+Tác động:
+  - Brute force hoặc dictionary attack có thể crack được secret
+  - Forge JWT token hợp lệ để đăng nhập bất kỳ tài khoản nào (kể cả ADMIN)
+
+Khắc phục:
+  1. Tạo secret ngẫu nhiên: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+  2. Xóa fallback "_refresh" trong auth.js dòng 17, bắt buộc phải có JWT_REFRESH_SECRET riêng biệt
+  3. Kiểm tra khi start server: nếu JWT_SECRET chưa set hoặc ngắn < 32 chars → throw error, không start
+
+
+═══════════════════════════════════════════════════════════════
+  🟠 MỨC ĐỘ: HIGH
+═══════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[H-01] TOKEN LƯU TRONG LOCALSTORAGE - DỄ BỊ XSS ĐÁNH CẮP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : frontend/src/services/api.js (dòng 6-15)
+             frontend/src/context/AuthContext.jsx (dòng 13-14)
+Mức độ     : HIGH
+CWE        : CWE-922 (Insecure Storage of Sensitive Information)
+OWASP      : A02:2021 Cryptographic Failures
+
+Vấn đề:
+  Access Token và Refresh Token được lưu trong localStorage:
+    localStorage.setItem('tlaundry_token', accessToken)
+    localStorage.setItem('tlaundry_refresh_token', refreshToken)
+    localStorage.setItem('tlaundry_user', JSON.stringify(user))
+
+  localStorage có thể bị đọc bởi bất kỳ JavaScript nào chạy trên cùng domain,
+  bao gồm script từ XSS attack hoặc third-party scripts (analytics, ads, CDN bị compromise).
+
+Tác động:
+  - Nếu có bất kỳ XSS nào (dù nhỏ) → toàn bộ session bị đánh cắp
+  - Refresh token 30 ngày bị đánh cắp → attacker duy trì quyền truy cập 30 ngày
+  - Không có cơ chế tự động revoke khi detect stolen token
+
+Khắc phục:
+  - Lưu accessToken trong memory (JavaScript variable) thay vì localStorage
+  - Lưu refreshToken trong HttpOnly cookie (không thể đọc bằng JS)
+  - Cấu hình cookie: { httpOnly: true, secure: true, sameSite: 'Strict' }
+  - Nếu dùng SPA không thể dùng cookie: implement token rotation + short expiry (5-15 phút)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[H-02] CORS QUÁ RỘNG - CHẤP NHẬN MỌI SUBDOMAIN *.VERCEL.APP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js (dòng 74-85)
+Mức độ     : HIGH
+CWE        : CWE-942 (Permissive Cross-domain Policy)
+
+Vấn đề:
+  CORS logic cho phép bất kỳ origin nào kết thúc bằng '.vercel.app':
+    origin.endsWith('.vercel.app')  → callback(null, true)
+
+  Điều này có nghĩa là:
+  - attacker-site.vercel.app         → ĐƯỢC PHÉP ✅
+  - evil-app-123.vercel.app          → ĐƯỢC PHÉP ✅
+  - malicious-phishing.vercel.app    → ĐƯỢC PHÉP ✅
+  Bất kỳ ai đăng ký project Vercel đều có subdomain *.vercel.app miễn phí.
+
+Tác động:
+  - Attacker tạo trang web giả trên vercel.app, gọi API của TLaundry từ browser nạn nhân
+  - Bypass CORS protection hoàn toàn với cookie credentials (nếu dùng credentials: true)
+
+Khắc phục:
+  - Chỉ whitelist URL cụ thể của dự án: https://tlaundry-frontend.vercel.app
+  - Không dùng wildcard *.vercel.app
+  - Lưu danh sách whitelist trong biến môi trường CLIENT_URL
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[H-03] RATE LIMIT BỊ BỎ QUA HOÀN TOÀN TRONG MÔI TRƯỜNG DEV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js (dòng 89-103)
+Mức độ     : HIGH
+CWE        : CWE-307 (Improper Restriction of Excessive Authentication Attempts)
+
+Vấn đề:
+  skip: (req) => isDev || req.ip === '127.0.0.1' || req.ip === '::1' || ...
+
+  Trong development (NODE_ENV !== 'production'), toàn bộ rate limiting bị disable.
+  Nếu production server vô tình chạy với NODE_ENV=development (hoặc không set),
+  rate limiting bị tắt hoàn toàn.
+
+  Hơn nữa, general limiter cho phép 1000 requests/15 phút — quá cao,
+  chỉ auth limiter là 100/15 phút nhưng chưa đủ bảo vệ.
+
+Tác động:
+  - Brute force đăng nhập không giới hạn nếu NODE_ENV không phải 'production'
+  - Credential stuffing attacks dễ thực hiện
+  - DoS/DDoS trên các endpoint public
+
+Khắc phục:
+  - Bỏ điều kiện skip isDev hoặc chỉ skip localhost trong dev, không skip trên staging/prod
+  - Validate NODE_ENV='production' được set đúng trong deployment pipeline
+  - Auth limiter giảm xuống 10-20 lần/15 phút (OWASP recommendation)
+  - Implement account lockout sau N lần thất bại
+  - Xem xét dùng Redis store cho rate limit thay vì in-memory (để horizontal scaling)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[H-04] MẬT KHẨU YẾU ĐƯỢC PHÉP (TỐI THIỂU 6 KÝ TỰ)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/middleware/validate.js (dòng 17-19)
+Mức độ     : HIGH
+CWE        : CWE-521 (Weak Password Requirements)
+OWASP      : A07:2021 Identification and Authentication Failures
+
+Vấn đề:
+  const passwordField = z.string().min(6, '...').max(100, '...')
+  
+  Chỉ yêu cầu 6 ký tự, không có yêu cầu về:
+  - Chữ hoa / chữ thường
+  - Ký tự số
+  - Ký tự đặc biệt
+  → Cho phép password "123456", "abcdef", "password" — các password phổ biến nhất thế giới
+
+Tác động:
+  - Brute force / dictionary attack thành công dễ dàng
+  - Credential stuffing từ danh sách password leaked databases
+
+Khắc phục:
+  - Tối thiểu 8 ký tự (NIST SP 800-63B recommendation: 8, tốt hơn là 12)
+  - Yêu cầu ít nhất 1 chữ hoa + 1 số + 1 ký tự đặc biệt
+  - Kiểm tra password không nằm trong danh sách common passwords (có thể dùng zxcvbn library)
+  - Implement: .regex(/^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/, 'Password không đủ mạnh!')
+
+
+═══════════════════════════════════════════════════════════════
+  🟡 MỨC ĐỘ: MEDIUM
+═══════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[M-01] KHÔNG CÓ CSRF PROTECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js
+Mức độ     : MEDIUM
+CWE        : CWE-352 (Cross-Site Request Forgery)
+OWASP      : A01:2021 Broken Access Control
+
+Vấn đề:
+  Hệ thống không có bất kỳ CSRF token nào. Tuy nhiên mức độ được giảm xuống MEDIUM
+  vì hiện tại token lưu ở localStorage (không phải cookie), nên các state-changing request
+  yêu cầu Authorization header — browser sẽ không tự gửi header này trong CSRF attack.
+  
+  Rủi ro vẫn tồn tại nếu sau này migrate sang cookie-based auth.
+  Ngoài ra, các endpoint public (POST /api/bookings, /api/contact) không có bảo vệ CSRF.
+
+Khắc phục:
+  - Implement CSRF token với csurf middleware hoặc double-submit cookie pattern
+  - Khi chuyển sang HttpOnly cookie auth, CSRF protection trở thành BẮT BUỘC
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[M-02] THIẾU HTTPS ENFORCEMENT VÀ SECURITY HEADERS ĐẦY ĐỦ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js (dòng 56)
+Mức độ     : MEDIUM
+CWE        : CWE-319 (Cleartext Transmission of Sensitive Information)
+
+Vấn đề:
+  - Helmet được dùng nhưng chưa cấu hình tùy chỉnh (dùng default)
+  - Không có HSTS (HTTP Strict Transport Security) header rõ ràng
+  - Không redirect HTTP → HTTPS ở tầng application
+  - Content-Security-Policy (CSP) của Helmet default có thể không phù hợp với frontend
+
+Khắc phục:
+  app.use(helmet({
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'", "https://api.tlaundry.vn"]
+      }
+    }
+  }));
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[M-03] EMAIL INJECTION / HEADER INJECTION TRONG EMAIL SERVICE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/services/emailService.js
+Mức độ     : MEDIUM
+CWE        : CWE-93 (Improper Neutralization of CRLF Sequences)
+
+Vấn đề:
+  Dữ liệu từ user input (firstName, lastName, address, notes, message, senderName...)
+  được nhúng trực tiếp vào HTML email template thông qua template literal:
+    ${booking.firstName} ${booking.lastName}
+    ${personalMessage || 'default...'}
+  
+  Nếu Zod validation bị bypass hoặc có field không được validate,
+  attacker có thể inject HTML/JavaScript vào email.
+  
+  Tuy nhiên email client hiện đại thường không chạy JavaScript,
+  nhưng vẫn có thể phishing bằng cách inject link hoặc form giả.
+
+  Thêm vào đó: tls: { rejectUnauthorized: false } trong emailService.js dòng 37
+  → Tắt TLS certificate verification → dễ bị MITM attack khi gửi email
+
+Khắc phục:
+  - Escape HTML trước khi nhúng vào template: thay < → &lt;, > → &gt;, " → &quot;
+  - Xóa rejectUnauthorized: false hoặc đặt thành true
+  - Dùng thư viện email templating an toàn (mjml, email-templates)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[M-04] ORDER CODE VÀ GIFT CARD CODE CÓ THỂ ĐOÁN ĐƯỢC
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js (dòng 454, 717)
+Mức độ     : MEDIUM
+CWE        : CWE-330 (Use of Insufficiently Random Values)
+
+Vấn đề:
+  const randomOrderCode = 'TL-' + Math.floor(100000 + Math.random() * 900000);
+  const randomCode = 'TL-' + Math.floor(100000 + Math.random() * 900000);
+
+  - Math.random() là pseudo-random, KHÔNG phải cryptographically secure
+  - Chỉ có 900.000 giá trị có thể (6 chữ số) → brute force cực nhanh
+  - Attacker có thể enumerate tất cả mã đơn hàng/gift card hợp lệ
+  - Endpoint GET /api/bookings/:orderCode/track là PUBLIC → không cần auth để query
+
+Tác động:
+  - Attacker enumerate tất cả mã đơn để xem thông tin khách hàng (tên, dịch vụ, ngày)
+  - Gift card code bị đoán/brute force → sử dụng thẻ của người khác
+
+Khắc phục:
+  import { randomBytes } from 'crypto';
+  const code = 'TL-' + randomBytes(4).toString('hex').toUpperCase(); // 4 tỷ khả năng
+  - Thêm rate limit nghiêm ngặt cho endpoint /track (5 requests/phút/IP)
+  - Thêm captcha hoặc require email để tra cứu đơn hàng
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[M-05] THIẾU INPUT VALIDATION CHO QUERY PARAMETERS PHÂN TRANG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js (dòng 378, 487, 551, 632)
+Mức độ     : MEDIUM
+CWE        : CWE-20 (Improper Input Validation)
+
+Vấn đề:
+  const { role, page = 1, limit = 20 } = req.query;
+  .skip((page - 1) * limit)
+  .limit(Number(limit))
+
+  - Không validate page và limit là số hợp lệ và trong giới hạn an toàn
+  - limit=999999 → query toàn bộ DB trong 1 request → DoS / memory exhaustion
+  - page=-1 → .skip(-1 * limit) → MongoDB behavior không xác định
+  - Không sanitize status, role query params → tuy MongoDB sanitize đã có, nhưng thiếu whitelist
+
+Khắc phục:
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+  - Validate status chỉ thuộc enum hợp lệ trước khi query
+
+
+═══════════════════════════════════════════════════════════════
+  🔵 MỨC ĐỘ: LOW / INFORMATIONAL
+═══════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[L-01] THIẾU ACCOUNT ENUMERATION PROTECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js (dòng 135-137)
+Mức độ     : LOW
+CWE        : CWE-204 (Observable Response Discrepancy)
+
+Vấn đề:
+  Register: return res.status(409).json({ message: 'Email này đã được sử dụng!' })
+  → Attacker có thể biết email nào đã đăng ký bằng cách thử register với email đó
+
+  Tuy nhiên đây là trade-off UX vs Security. Nhiều hệ thống chấp nhận rủi ro này.
+
+Khắc phục:
+  - Trả về response trung lập: "Nếu email chưa đăng ký, link xác nhận sẽ được gửi"
+  - Implement email verification flow
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[L-02] THIẾU LOGGING & AUDIT TRAIL AN TOÀN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js, middleware/errorHandler.js
+Mức độ     : LOW
+
+Vấn đề:
+  - Chỉ dùng console.log/console.error, không có structured logging
+  - Không log các sự kiện bảo mật quan trọng: login failed, admin action, token refresh
+  - Không có audit trail cho admin actions (ai toggle-active user nào, lúc nào)
+  - Logs không được ghi vào file hoặc log management system
+
+Khắc phục:
+  - Dùng winston hoặc pino cho structured JSON logging
+  - Log: IP, timestamp, user ID, action, result cho mọi auth event
+  - Implement audit log collection cho admin actions
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[L-03] KHÔNG CÓ EMAIL VERIFICATION KHI ĐĂNG KÝ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/server.js (dòng 129-165)
+Mức độ     : LOW
+
+Vấn đề:
+  - User đăng ký với bất kỳ email nào (kể cả email người khác) mà không cần verify
+  - Không có bước xác nhận email → spam accounts dễ tạo
+  - Attacker có thể đăng ký với email của người khác để nhận booking confirmation
+
+Khắc phục:
+  - Gửi email verification link sau khi đăng ký
+  - isEmailVerified: false mặc định, chỉ cho phép login khi verified
+  - Implement forgot password flow an toàn (token 1 lần, hết hạn sau 1 giờ)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[L-04] SEED DATA CHỨA CREDENTIALS CỨNG TRONG CODE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File       : backend/seedData.js
+Mức độ     : LOW
+
+Vấn đề:
+  - seedDemoUsers() tạo tài khoản demo với password mặc định
+  - Nếu seed chạy trên production → tạo ra backdoor accounts với mật khẩu yếu
+  - Không có cơ chế disable seed trong production
+
+Khắc phục:
+  - Guard: if (process.env.NODE_ENV === 'production') return; // Không seed prod
+  - Seed chỉ chạy khi có flag rõ ràng: SEED_DATA=true
+  - Xóa seed function sau khi deploy, hoặc set SEED_ENABLED=false
+
+
+═══════════════════════════════════════════════════════════════
+  ĐIỂM MẠNH ĐÃ ĐƯỢC TRIỂN KHAI TỐT
+═══════════════════════════════════════════════════════════════
+
+  ✅ Helmet middleware để set security headers
+  ✅ express-mongo-sanitize để chống NoSQL Injection
+  ✅ Zod schema validation với strip unknown fields
+  ✅ JWT Access Token (15 phút) + Refresh Token Rotation
+  ✅ bcrypt (salt rounds 10) để hash password - đúng chuẩn
+  ✅ RBAC (CUSTOMER/STAFF/ADMIN) với middleware authorize()
+  ✅ Rate limiting có cấu hình (dù còn lỗi như đã nêu)
+  ✅ Centralized error handler không leak stack trace ở production
+  ✅ Request body size limit 10kb
+  ✅ Token rotation khi refresh (vô hiệu hóa token cũ)
+  ✅ .gitignore có .env (nhưng cần verify không bị commit trước đó)
+
+
+═══════════════════════════════════════════════════════════════
+  ƯU TIÊN KHẮC PHỤC (THEO THỨ TỰ QUAN TRỌNG)
+═══════════════════════════════════════════════════════════════
+
+  Ngay lập tức (trong 24h):
+  ├── [C-01] Rotate tất cả credentials bị lộ trong .env
+  └── [C-02] Tạo JWT secrets mạnh hơn, xóa fallback logic
+
+  Tuần này:
+  ├── [H-01] Chuyển tokens sang HttpOnly cookie hoặc memory
+  ├── [H-02] Sửa CORS whitelist cụ thể, bỏ *.vercel.app wildcard
+  ├── [H-03] Fix rate limiting không bị skip ở production
+  └── [H-04] Tăng password strength requirement
+
+  Trong Sprint tới:
+  ├── [M-03] Fix TLS rejectUnauthorized=false trong emailService
+  ├── [M-04] Dùng crypto.randomBytes cho order/gift card codes
+  ├── [M-05] Validate và cap pagination parameters
+  └── [M-01] Chuẩn bị CSRF protection khi migrate sang cookie auth
+
+  Backlog:
+  ├── [L-01] Email verification flow
+  ├── [L-02] Structured logging + audit trail
+  ├── [L-03] Account enumeration protection
+  └── [L-04] Guard seed data không chạy ở production
+
+
+═══════════════════════════════════════════════════════════════
+  HẾT BÁO CÁO
+═══════════════════════════════════════════════════════════════

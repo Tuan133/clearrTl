@@ -61,10 +61,16 @@ export const bookingSchema = z.object({
     .trim()
     .min(5, 'Địa chỉ phải có ít nhất 5 ký tự!')
     .max(200, 'Địa chỉ quá dài!'),
-  suburb: z.string({ required_error: 'Suburb là bắt buộc!' }).trim().min(2).max(100),
-  state: z.string({ required_error: 'State là bắt buộc!' }).trim().min(2).max(50),
-  pickupDate: z.string({ required_error: 'Ngày lấy hàng là bắt buộc!' }).min(1, 'Ngày lấy hàng là bắt buộc!'),
+  suburb: z.string().trim().max(100).optional().default(''),
+  state: z.string().trim().max(50).optional().default(''),
+  pickupDate: z.string().optional().default(''),
+  pickupTime: z.string().optional().default(''),
+  frequency: z.string().optional().default('one-off'),
   serviceType: z.string().trim().max(100).optional(),
+  detergent: z.string().trim().max(100).optional().default('Organic Sinh Học (Eco-Friendly)'),
+  softener: z.string().trim().max(100).optional().default('Hương Oải Hương (Lavender)'),
+  deliverySpeed: z.string().trim().max(50).optional().default('standard'),
+  expressFee: z.number().optional().default(0),
   notes: z.string().trim().max(500, 'Ghi chú quá dài!').optional(),
 });
 
@@ -85,28 +91,7 @@ export const contactSchema = z.object({
     .max(2000, 'Nội dung quá dài!'),
 });
 
-// ─── Gift Card Schema ──────────────────────────────────────────────────────────
 
-export const giftCardSchema = z.object({
-  amount: z
-    .number({ required_error: 'Mệnh giá là bắt buộc!', invalid_type_error: 'Mệnh giá phải là số!' })
-    .positive('Mệnh giá phải lớn hơn 0!')
-    .max(10_000_000, 'Mệnh giá không được vượt quá 10,000,000 VNĐ!'),
-  recipientName: z
-    .string({ required_error: 'Tên người nhận là bắt buộc!' })
-    .trim()
-    .min(2)
-    .max(100, 'Tên người nhận quá dài!'),
-  recipientEmail: emailField,
-  senderName: z
-    .string({ required_error: 'Tên người gửi là bắt buộc!' })
-    .trim()
-    .min(2)
-    .max(100, 'Tên người gửi quá dài!'),
-  senderEmail: emailField,
-  deliveryDate: z.string({ required_error: 'Ngày giao thẻ là bắt buộc!' }).min(1, 'Ngày giao thẻ là bắt buộc!'),
-  message: z.string().trim().max(500, 'Lời nhắn quá dài!').optional(),
-});
 
 // ─── Newsletter Schema ─────────────────────────────────────────────────────────
 
@@ -132,18 +117,28 @@ export const adminCreateUserSchema = z.object({
 /**
  * Tạo Express middleware từ một Zod schema.
  * - Tự động strip các field lạ (strip unknown)
- * - Trả về lỗi 422 với danh sách lỗi chi tiết nếu validation fail
+ * - Trả về lỗi 400 với danh sách lỗi chi tiết nếu validation fail
  */
 export const validate = (schema) => (req, res, next) => {
+  // Guard: body phải là object (null/undefined/string gây crash tại .map())
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Dữ liệu đầu vào không hợp lệ! Body phải là JSON object.',
+      errors: [],
+    });
+  }
+
   const result = schema.safeParse(req.body);
 
   if (!result.success) {
-    const errors = result.error.errors.map((e) => ({
+    // result.error.errors luôn là array khi result.success === false
+    const errors = (result.error?.errors ?? []).map((e) => ({
       field: e.path.join('.'),
       message: e.message,
     }));
 
-    return res.status(422).json({
+    return res.status(400).json({
       success: false,
       message: errors[0]?.message || 'Dữ liệu đầu vào không hợp lệ!',
       errors,

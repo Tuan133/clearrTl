@@ -97,15 +97,21 @@ const OrderCard = ({ booking }) => {
             </div>
             <div className="order-detail-item">
               <span className="order-detail-label">Địa chỉ</span>
-              <span className="order-detail-value">{booking.address}, {booking.suburb}, {booking.state}</span>
+              <span className="order-detail-value">{booking.address} {booking.suburb ? `, ${booking.suburb}` : ''} {booking.state ? `, ${booking.state}` : ''}</span>
             </div>
             <div className="order-detail-item">
-              <span className="order-detail-label">Thời gian</span>
-              <span className="order-detail-value">{booking.pickupTime}</span>
+              <span className="order-detail-label">Nước giặt</span>
+              <span className="order-detail-value">{booking.detergent || 'Organic Sinh Học'}</span>
             </div>
             <div className="order-detail-item">
-              <span className="order-detail-label">Tần suất</span>
-              <span className="order-detail-value">{booking.frequency}</span>
+              <span className="order-detail-label">Nước xả</span>
+              <span className="order-detail-value">{booking.softener || 'Hương Oải Hương'}</span>
+            </div>
+            <div className="order-detail-item">
+              <span className="order-detail-label">Giao nhận</span>
+              <span className="order-detail-value">
+                {booking.deliverySpeed === 'express' ? '⚡ Hỏa tốc 4h-6h (+30.000₫)' : '🚚 Tiêu chuẩn 24h'}
+              </span>
             </div>
             {booking.notes && (
               <div className="order-detail-item" style={{ gridColumn: '1 / -1' }}>

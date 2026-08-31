@@ -11,7 +11,6 @@ import ServicesPage from './pages/ServicesPage';
 import PricingPage from './pages/PricingPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
-import GiftCardPage from './pages/GiftCardPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OrderHistoryPage from './pages/OrderHistoryPage';
@@ -166,8 +165,6 @@ function AppLayout() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
-
-        <Route path="/gift-card" element={<GiftCardPage />} />
 
         {/* ── Auth Routes ── */}
         <Route path="/login" element={<LoginPage />} />

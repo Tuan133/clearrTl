@@ -5,7 +5,7 @@ import { submitBookingAPI } from '../services/api';
 
 const BookingPage = () => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState('');
   const [done, setDone] = useState(false);
@@ -13,10 +13,16 @@ const BookingPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [orderCode, setOrderCode] = useState('');
   const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', phone: '',
-    address: '', suburb: '', state: '', postcode: '',
-    pickupDate: '', pickupTime: 'Morning (8am-12pm)', notes: '',
-    frequency: 'one-off',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    detergent: '',
+    softener: '',
+    deliverySpeed: 'standard', // 'standard' | 'express'
+    expressFee: 0,
+    notes: '',
   });
 
   const STEPS = [t.bookingPage.step1, t.bookingPage.step2, t.bookingPage.step3];
@@ -33,27 +39,6 @@ const BookingPage = () => {
         </svg>
       ),
       label: t.header.domestic
-    },
-    {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
-          <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-          <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
-          <path d="M10 6h4M10 10h4M10 14h4M10 18h4"/>
-        </svg>
-      ),
-      label: t.header.commercial
-    },
-    {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 3a2.5 2.5 0 0 0-2.5 2.5v1.25L3 11a1.5 1.5 0 0 0 .5 2.8h17a1.5 1.5 0 0 0 .5-2.8l-6.5-4.25V5.5A2.5 2.5 0 0 0 12 3z"/>
-          <path d="M12 13.8v7.2"/>
-          <path d="M8 17h8"/>
-        </svg>
-      ),
-      label: t.header.ironing
     },
     {
       icon: (
@@ -75,49 +60,161 @@ const BookingPage = () => {
       ),
       label: t.header.linen
     },
+  ];
+
+  const detergentOptions = [
     {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 2a14.5 14.5 0 0 0 0 20M12 2a14.5 14.5 0 0 1 0 20"/>
-          <path d="M2 12h20"/>
-        </svg>
-      ),
-      label: t.header.sports
+      id: 'eco',
+      icon: '🌿',
+      nameVi: 'Nước Giặt Organic Sinh Học',
+      nameEn: 'Eco-Friendly Bio Detergent',
+      descVi: 'Chiết xuất thực vật tự nhiên, an toàn cho da nhạy cảm & em bé, bảo vệ môi trường.',
+      descEn: 'Plant-based botanical formula, 100% hypoallergenic and gentle for all sensitive skins.',
+      badgeVi: 'Khuyên Dùng',
+      badgeEn: 'Recommended',
     },
     {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="4" r="2"/>
-          <path d="M12 6v6l4 2"/>
-          <path d="M8 12h8"/>
-          <path d="M10 18a5 5 0 1 0 0-10"/>
-        </svg>
-      ),
-      label: t.header.ndis
+      id: 'perfume',
+      icon: '🌸',
+      nameVi: 'Nước Giặt Hương Nước Hoa Cao Cấp',
+      nameEn: 'Luxury Perfume Scent Detergent',
+      descVi: 'Công nghệ vi nang lưu hương, lưu giữ hương thơm quý phái, thanh lịch suốt cả tuần.',
+      descEn: 'Micro-encapsulated fragrance beads infusing long-lasting luxury perfume into fabrics.',
+      badgeVi: 'Thơm Lâu',
+      badgeEn: 'Long-Lasting',
     },
     {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 21V5a2 2 0 0 1-2-2H7a2 2 0 0 1-2 2v16"/>
-          <path d="M12 7v6M9 10h6"/>
-          <path d="M3 21h18"/>
-        </svg>
-      ),
-      label: t.header.careFacilities
+      id: 'antibacterial',
+      icon: '🛡️',
+      nameVi: 'Nước Giặt Kháng Khuẩn Khử Mùi',
+      nameEn: 'Antibacterial & Active Shield',
+      descVi: 'Khử sạch 99.9% vi khuẩn và mùi ẩm mốc, tối ưu chuyên dụng cho đồ thể thao & văn phòng.',
+      descEn: 'Eliminates 99.9% bacteria & deep sweat odors, ideal for activewear and daily office clothes.',
+      badgeVi: 'Kháng Khuẩn',
+      badgeEn: 'Active Shield',
     },
     {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <path d="M12 11v6M9 14h6"/>
-        </svg>
-      ),
-      label: t.header.hcp
+      id: 'gentle',
+      icon: '🫧',
+      nameVi: 'Nước Giặt Dịu Nhẹ Tiêu Chuẩn',
+      nameEn: 'Classic Gentle Clean',
+      descVi: 'Làm sạch sâu sợi vải êm dịu, giữ bền màu sắc ban đầu và mềm mại tự nhiên.',
+      descEn: 'Deep gentle cleaning formula preserving natural fabric vibrancy and softness.',
+      badgeVi: 'Tiêu Chuẩn',
+      badgeEn: 'Standard',
+    },
+    {
+      id: 'random-det',
+      icon: '🎁',
+      nameVi: 'Bóc Túi Mù Ngẫu Nhiên',
+      nameEn: 'Mystery Detergent (Surprise)',
+      descVi: 'Hãy để TLaundry chọn giúp bạn! Chúng tôi sẽ chọn loại phù hợp nhất với từng lần giặt.',
+      descEn: 'Let TLaundry surprise you! We pick the best formula tailored to each wash cycle.',
+      badgeVi: '🌠 Ngẫu Nhiên',
+      badgeEn: '🌠 Surprise',
+      isMystery: true,
+    },
+  ];
+
+  const softenerOptions = [
+    {
+      id: 'lavender',
+      icon: '🌸',
+      nameVi: 'Hương Oải Hương (Lavender Relax)',
+      nameEn: 'Lavender French Relax',
+      scentVi: 'Thảo mộc thư thái & dễ chịu',
+      scentEn: 'Calming French botanical note',
+    },
+    {
+      id: 'morning',
+      icon: '☀️',
+      nameVi: 'Hương Nắng Ban Mai (Morning Fresh)',
+      nameEn: 'Morning Sunlight Fresh',
+      scentVi: 'Tươi mát, rạng rỡ ngày mới',
+      scentEn: 'Crisp, uplifting morning scent',
+    },
+    {
+      id: 'baby',
+      icon: '👶',
+      nameVi: 'Dịu Nhẹ Em Bé (Baby Hypoallergenic)',
+      nameEn: 'Baby Soft (Hypoallergenic)',
+      scentVi: 'Không hương liệu, dịu êm tuyệt đối',
+      scentEn: 'Fragrance-free, zero irritation',
+    },
+    {
+      id: 'none',
+      icon: '🚫',
+      nameVi: 'Không Sử Dụng Nước Xả Vải',
+      nameEn: 'No Fabric Softener',
+      scentVi: 'Giữ nguyên độ tự nhiên của vải',
+      scentEn: 'Pure natural wash only',
+    },
+    {
+      id: 'random-soft',
+      icon: '🎁',
+      nameVi: 'Bóc Túi Mù Ngẫu Nhiên',
+      nameEn: 'Mystery Softener (Surprise)',
+      scentVi: 'TLaundry sẽ chọn mùi hương bất ngờ cho bạn 🌟',
+      scentEn: 'TLaundry picks a surprise scent just for you 🌟',
+      isMystery: true,
+    },
+  ];
+
+  const deliveryOptions = [
+    {
+      id: 'express',
+      icon: '⚡',
+      nameVi: 'Ưu tiên',
+      nameEn: 'Priority Express',
+      timeVi: '4 - 6 Giờ',
+      timeEn: '4 - 6 Hours',
+      descVi: 'Cam kết giao hàng đúng hẹn • Ưu tiên xử lý riêng biệt',
+      descEn: 'Guaranteed on-time delivery • Priority dedicated processing',
+      isHighlightDesc: true,
+      feeVi: '+30.000₫',
+      feeEn: '+$10.00 / +30.000₫',
+      isFree: false,
+    },
+    {
+      id: 'standard',
+      icon: '🚚',
+      nameVi: 'Tiêu chuẩn',
+      nameEn: 'Standard',
+      timeVi: '24 Giờ',
+      timeEn: '24 Hours',
+      descVi: 'Giặt sấy, là phẳng & giao trả tận nơi chuẩn 24H',
+      descEn: 'Washed, dried, folded & delivered to your door in 24H',
+      isHighlightDesc: false,
+      feeVi: 'Miễn phí',
+      feeEn: 'Free',
+      isFree: true,
+    },
+    {
+      id: 'scheduled',
+      icon: '⏰',
+      nameVi: 'Đặt giao sau',
+      nameEn: 'Schedule For Later',
+      timeVi: 'Theo lịch hẹn',
+      timeEn: 'Custom Time Slot',
+      descVi: 'Linh hoạt hẹn giờ lấy & giao đồ theo lịch rảnh của bạn',
+      descEn: 'Choose pickup and delivery time slots that fit your day',
+      isHighlightDesc: false,
+      feeVi: 'Miễn phí',
+      feeEn: 'Free',
+      isFree: true,
     },
   ];
 
   const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  // Toggle: click lại item đã chọn → bỏ chọn (tùy chọn, không bắt buộc)
+  const setDetergent = (name) => setForm(f => ({ ...f, detergent: f.detergent === name ? '' : name }));
+  const setSoftener  = (name) => setForm(f => ({ ...f, softener:  f.softener  === name ? '' : name }));
+  const setDelivery = (speed) => setForm(f => ({
+    ...f,
+    deliverySpeed: speed,
+    expressFee: speed === 'express' ? 30000 : 0
+  }));
 
   const submitBooking = async (e) => {
     e.preventDefault();
@@ -125,17 +222,16 @@ const BookingPage = () => {
     setErrorMessage('');
     try {
       const res = await submitBookingAPI({
-        serviceType: selected || 'Giặt Ủi Gia Đình',
+        serviceType: selected || (lang === 'vi' ? 'Giặt Ủi Gia Đình' : 'Domestic Laundry'),
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
         phone: form.phone,
         address: form.address,
-        suburb: form.suburb,
-        state: form.state,
-        pickupDate: form.pickupDate,
-        pickupTime: form.pickupTime,
-        frequency: form.frequency,
+        detergent: form.detergent,
+        softener: form.softener,
+        deliverySpeed: form.deliverySpeed,
+        expressFee: form.expressFee,
         notes: form.notes
       });
       if (res && res.orderCode) {
@@ -143,7 +239,7 @@ const BookingPage = () => {
       }
       setDone(true);
     } catch (err) {
-      setErrorMessage(err.message || 'Gửi yêu cầu thất bại. Vui lòng thử lại!');
+      setErrorMessage(err.message || (lang === 'vi' ? 'Gửi yêu cầu thất bại. Vui lòng thử lại!' : 'Failed to submit quote request. Please try again!'));
     } finally {
       setLoading(false);
     }
@@ -170,7 +266,7 @@ const BookingPage = () => {
             <h2>{t.bookingPage.successTitle}</h2>
             {orderCode && (
               <div style={{ background: 'var(--light-blue)', padding: '12px 20px', borderRadius: 10, margin: '16px auto', maxWidth: 400, fontSize: 16, fontWeight: 700, color: 'var(--primary)' }}>
-                Mã đơn hàng của bạn: <span style={{ color: 'var(--cyan)', fontSize: 18, letterSpacing: '1px' }}>{orderCode}</span>
+                {lang === 'vi' ? 'Mã đơn hàng của bạn:' : 'Your Order Code:'} <span style={{ color: 'var(--cyan)', fontSize: 18, letterSpacing: '1px' }}>{orderCode}</span>
               </div>
             )}
             <p>{t.bookingPage.successDesc}</p>
@@ -227,12 +323,13 @@ const BookingPage = () => {
               </div>
             )}
 
-            {/* Step 1: Details */}
+            {/* Step 1: Details & Options */}
             {step === 1 && (
               <form onSubmit={(e) => { e.preventDefault(); setStep(2); }}>
                 <h2>{t.bookingPage.detailsTitle}</h2>
                 <p className="subtitle">{t.bookingPage.detailsSubtitle}</p>
 
+                {/* Personal Information */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>{t.bookingPage.firstName} <span className="required-star">*</span></label>
@@ -251,66 +348,152 @@ const BookingPage = () => {
                   </div>
                   <div className="form-group">
                     <label>{t.bookingPage.phone} <span className="required-star">*</span></label>
-                    <input name="phone" type="tel" value={form.phone} onChange={handle} required placeholder="0400 000 000" />
+                    <input name="phone" type="tel" value={form.phone} onChange={handle} required placeholder="0901 234 567" />
                   </div>
                 </div>
 
                 <div className="form-group">
                   <label>{t.bookingPage.address} <span className="required-star">*</span></label>
-                  <input name="address" value={form.address} onChange={handle} required placeholder="123 Main Street" />
+                  <input
+                    name="address"
+                    value={form.address}
+                    onChange={handle}
+                    required
+                    placeholder={lang === 'vi' ? 'Số 123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM' : '123 Main Street, Suite 400, Central City'}
+                  />
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t.bookingPage.suburb} <span className="required-star">*</span></label>
-                    <input name="suburb" value={form.suburb} onChange={handle} required placeholder="Melbourne" />
+                {/* 1. Detergent Selection */}
+                <div className="form-section-block">
+                  <div className="form-section-title">
+                    <span>🧺</span> {t.bookingPage.detergentTitle}
+                    <span className="form-section-optional">{lang === 'vi' ? 'Tùy chọn' : 'Optional'}</span>
                   </div>
-                  <div className="form-group">
-                    <label>{t.bookingPage.state} <span className="required-star">*</span></label>
-                    <select name="state" value={form.state} onChange={handle} required>
-                      <option value="">-- Select --</option>
-                      {['VIC','NSW','QLD','SA','WA','TAS','ACT','NT'].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                  <div className="form-section-subtitle">{t.bookingPage.detergentSubtitle}</div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{t.bookingPage.pickupDate} <span className="required-star">*</span></label>
-                    <input name="pickupDate" type="date" value={form.pickupDate} onChange={handle} required min={new Date().toISOString().split('T')[0]} />
-                  </div>
-                  <div className="form-group">
-                    <label>{t.bookingPage.pickupTime}</label>
-                    <select name="pickupTime" value={form.pickupTime} onChange={handle}>
-                      <option>Sáng (8am-12pm)</option>
-                      <option>Chiều (12pm-5pm)</option>
-                      <option>Tối (5pm-7pm)</option>
-                    </select>
-                  </div>
-                </div>
+                  <div className="laundry-grid-cards">
+                    {detergentOptions.map(item => {
+                      const itemName = lang === 'vi' ? item.nameVi : item.nameEn;
+                      const itemDesc = lang === 'vi' ? item.descVi : item.descEn;
+                      const itemBadge = lang === 'vi' ? item.badgeVi : item.badgeEn;
+                      const isSelected = form.detergent === itemName;
 
-                <div className="form-group">
-                  <label>{t.bookingPage.frequency}</label>
-                  <div className="radio-group">
-                    {[
-                      { val: 'one-off', label: 'Một lần' },
-                      { val: 'weekly', label: 'Hàng tuần' },
-                      { val: 'fortnightly', label: '2 tuần / lần' },
-                      { val: 'monthly', label: 'Hàng tháng' },
-                    ].map(f => (
-                      <label key={f.val} className="radio-label">
-                        <input type="radio" name="frequency" value={f.val} checked={form.frequency === f.val} onChange={handle} />
-                        {f.label}
-                      </label>
-                    ))}
+                      return (
+                        <div
+                          key={item.id}
+                          className={`laundry-card-choice ${isSelected ? 'active' : ''} ${item.isMystery ? 'mystery' : ''}`}
+                          onClick={() => setDetergent(itemName)}
+                        >
+                          <span className="laundry-card-icon">{item.icon}</span>
+                          <div className="laundry-card-header">
+                            <span className="laundry-card-name">{itemName}</span>
+                            <p className="laundry-card-desc">{itemDesc}</p>
+                            {itemBadge && (
+                              <span className={item.isMystery ? 'laundry-badge-mystery' : 'laundry-badge-recommend'}>{itemBadge}</span>
+                            )}
+                          </div>
+                          <div className="laundry-card-check">
+                            {isSelected ? '✓' : ''}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
+                {/* 2. Softener Fragrance Selection */}
+                <div className="form-section-block">
+                  <div className="form-section-title">
+                    <span>🌸</span> {t.bookingPage.softenerTitle}
+                    <span className="form-section-optional">{lang === 'vi' ? 'Tùy chọn' : 'Optional'}</span>
+                  </div>
+                  <div className="form-section-subtitle">{t.bookingPage.softenerSubtitle}</div>
+
+                  <div className="softener-chips-grid">
+                    {softenerOptions.map(item => {
+                      const itemName = lang === 'vi' ? item.nameVi : item.nameEn;
+                      const itemScent = lang === 'vi' ? item.scentVi : item.scentEn;
+                      const isSelected = form.softener === itemName;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`softener-chip ${isSelected ? 'active' : ''} ${item.isMystery ? 'mystery' : ''}`}
+                          onClick={() => setSoftener(itemName)}
+                        >
+                          <span className="softener-chip-icon">{item.icon}</span>
+                          <div className="softener-chip-text">
+                            <span className="softener-chip-name">{itemName}</span>
+                            <span className="softener-chip-scent">{itemScent}</span>
+                          </div>
+                          <div className="laundry-card-check">
+                            {isSelected ? '✓' : ''}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3. Delivery Method (Grab-style options list) */}
+                <div className="form-section-block">
+                  <div className="form-section-title">
+                    <span>🚀</span> {t.bookingPage.deliveryTitle}
+                  </div>
+                  <div className="form-section-subtitle">{t.bookingPage.deliverySubtitle}</div>
+
+                  <div className="grab-delivery-list">
+                    {deliveryOptions.map(item => {
+                      const itemName = lang === 'vi' ? item.nameVi : item.nameEn;
+                      const itemTime = lang === 'vi' ? item.timeVi : item.timeEn;
+                      const itemDesc = lang === 'vi' ? item.descVi : item.descEn;
+                      const itemFee = lang === 'vi' ? item.feeVi : item.feeEn;
+                      const isSelected = form.deliverySpeed === item.id;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`grab-delivery-item ${isSelected ? 'active' : ''} ${item.id === 'express' ? 'grab-delivery--express' : ''}`}
+                          onClick={() => setDelivery(item.id)}
+                        >
+                          <div className="grab-delivery-left">
+                            <div className="grab-delivery-heading">
+                              <span className="grab-delivery-name">{itemName}</span>
+                              <span className="grab-delivery-icon">{item.icon}</span>
+                              <span className="grab-delivery-dot">•</span>
+                              <span className="grab-delivery-time">{itemTime}</span>
+                              <span className="grab-delivery-info" title={itemDesc}>i</span>
+                            </div>
+                            {itemDesc && (
+                              <div className={`grab-delivery-subtitle ${item.isHighlightDesc ? 'highlight' : ''}`}>
+                                {itemDesc}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="grab-delivery-right">
+                            <span className={`grab-delivery-fee ${item.isFree ? 'free' : ''}`}>
+                              {itemFee}
+                            </span>
+                            <div className="grab-delivery-radio">
+                              {isSelected ? '✓' : ''}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Additional Notes */}
                 <div className="form-group">
                   <label>{t.bookingPage.notes}</label>
-                  <textarea name="notes" value={form.notes} onChange={handle} placeholder="Ghi chú thêm nếu có..." />
+                  <textarea
+                    name="notes"
+                    value={form.notes}
+                    onChange={handle}
+                    placeholder={t.bookingPage.notesPlaceholder}
+                  />
                 </div>
 
                 <div className="form-actions">
@@ -327,23 +510,45 @@ const BookingPage = () => {
                 <p className="subtitle">{t.bookingPage.confirmSubtitle}</p>
 
                 <div style={{ background: 'var(--bg-light)', borderRadius: 'var(--radius)', padding: 24, marginBottom: 24 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
                     {[
-                      ['Dịch vụ', selected],
-                      ['Họ tên', `${form.firstName} ${form.lastName}`],
-                      ['Email', form.email],
-                      ['Số điện thoại', form.phone],
-                      ['Địa chỉ', `${form.address}, ${form.suburb} ${form.state}`],
-                      ['Ngày nhận hàng', form.pickupDate],
-                      ['Khung giờ', form.pickupTime],
-                      ['Tần suất', form.frequency],
+                      [t.bookingPage.confirmService, selected || (lang === 'vi' ? 'Giặt Ủi Gia Đình' : 'Domestic Laundry')],
+                      [t.bookingPage.confirmCustomer, `${form.firstName} ${form.lastName}`],
+                      [t.bookingPage.confirmEmail, form.email],
+                      [t.bookingPage.confirmPhone, form.phone],
+                      [t.bookingPage.confirmAddress, form.address],
+                      [t.bookingPage.confirmDetergent, form.detergent],
+                      [t.bookingPage.confirmSoftener, form.softener],
+                      [
+                        t.bookingPage.confirmDelivery,
+                        form.deliverySpeed === 'express' ? (
+                          <span style={{ color: '#d97706', fontWeight: 800 }}>
+                            ⚡ {lang === 'vi' ? 'Ưu Tiên (4 - 6 Giờ)' : 'Priority Express (4 - 6 Hours)'} (+30.000₫)
+                          </span>
+                        ) : form.deliverySpeed === 'scheduled' ? (
+                          <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
+                            ⏰ {lang === 'vi' ? 'Đặt Giao Sau (Theo lịch hẹn)' : 'Schedule For Later'} ({lang === 'vi' ? 'Miễn phí' : 'Free'})
+                          </span>
+                        ) : (
+                          <span style={{ color: '#059669', fontWeight: 700 }}>
+                            🚚 {lang === 'vi' ? 'Tiêu Chuẩn (24 Giờ)' : 'Standard Delivery (24 Hours)'} ({lang === 'vi' ? 'Miễn phí' : 'Free'})
+                          </span>
+                        )
+                      ],
                     ].map(([k, v]) => (
-                      <div key={k}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>{k}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary)' }}>{v || '—'}</div>
+                      <div key={k} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-gray)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{k}</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--primary-dark)' }}>{v || '—'}</div>
                       </div>
                     ))}
                   </div>
+
+                  {form.notes && (
+                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px dashed #cbd5e1' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-gray)', textTransform: 'uppercase', marginBottom: 4 }}>{t.bookingPage.confirmNotes}</div>
+                      <div style={{ fontSize: 14, color: 'var(--text-body)', fontStyle: 'italic' }}>"{form.notes}"</div>
+                    </div>
+                  )}
                 </div>
 
                 {errorMessage && (
@@ -355,7 +560,7 @@ const BookingPage = () => {
                 <div className="form-actions">
                   <button type="button" className="btn-back" disabled={loading} onClick={() => setStep(1)}>{t.bookingPage.btnBack}</button>
                   <button type="submit" className="btn-next" disabled={loading}>
-                    {loading ? 'Đang gửi dữ liệu...' : t.bookingPage.btnSubmit}
+                    {loading ? (lang === 'vi' ? 'Đang gửi dữ liệu...' : 'Submitting...') : t.bookingPage.btnSubmit}
                   </button>
                 </div>
               </form>
@@ -368,3 +573,4 @@ const BookingPage = () => {
 };
 
 export default BookingPage;
+

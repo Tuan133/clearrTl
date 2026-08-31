@@ -7,7 +7,6 @@
  * Chiến lược gửi mail:
  *   - 1 email duy nhất đến KHÁCH HÀNG (To)
  *   - Admin/Chủ tiệm nhận BCC tự động — không cần gửi email riêng
- *   - Nếu đơn có Gift Card → hiển thị thêm Phần 3 trong cùng email
  *
  * Biến môi trường cần thiết trong .env:
  *   EMAIL_HOST      = smtp.gmail.com
@@ -75,12 +74,13 @@ const formatCurrency = (amount) => {
  * Tạo bản plain text từ dữ liệu booking — bắt buộc để tránh spam
  * Spam filter phạt nặng email chỉ có HTML mà không có text/plain
  */
-const buildBookingPlainText = (booking, giftCard = null) => {
+const buildBookingPlainText = (booking) => {
   const shopName  = process.env.EMAIL_FROM_NAME || 'TLaundry';
   const fullName  = `${booking.firstName} ${booking.lastName}`;
-  const fullAddr  = `${booking.address}, ${booking.suburb}, ${booking.state}`;
-  const freqLabel = booking.frequency === 'weekly' ? 'Hang tuan'
-    : booking.frequency === 'fortnightly' ? 'Hai tuan mot lan' : 'Mot lan';
+  const addressParts = [booking.address, booking.suburb, booking.state].filter(Boolean);
+  const fullAddr  = addressParts.length > 0 ? addressParts.join(', ') : booking.address;
+  const isExpress = booking.deliverySpeed === 'express';
+  const speedLabel = isExpress ? `Giao hang cap toc 4h-6h (+${formatCurrency(booking.expressFee || 30000)})` : 'Giao tieu chuan (24h - Mien phi)';
 
   let text =
 `Xin chao ${fullName},
@@ -92,35 +92,21 @@ MA DON HANG: ${booking.orderCode}
 ==================================================
 
 CHI TIET DON HANG:
-- Khach hang  : ${fullName}
-- Dich vu     : ${booking.serviceType || 'Giat Ui Gia Dinh'}
-- Ngay lay do : ${formatDate(booking.pickupDate)}
-- Khung gio   : ${booking.pickupTime || 'Buoi sang (8am-12pm)'}
-- Tan suat    : ${freqLabel}
-- Dia chi     : ${fullAddr}
-- Dien thoai  : ${booking.phone}${booking.totalAmount ? `
-- Tong tien   : ${formatCurrency(booking.totalAmount)}` : ''}${booking.notes ? `
-- Ghi chu     : ${booking.notes}` : ''}
+- Khach hang       : ${fullName}
+- Dich vu          : ${booking.serviceType || 'Giat Ui Gia Dinh'}
+- Mau nuoc giat    : ${booking.detergent || 'Organic Sinh Hoc (Eco-Friendly)'}
+- Nuoc xa vai      : ${booking.softener || 'Huong Oai Huong (Lavender)'}
+- Phuong thuc giao : ${speedLabel}
+- Dia chi nhan     : ${fullAddr}
+- Dien thoai       : ${booking.phone}${booking.totalAmount ? `
+- Tong tien        : ${formatCurrency(booking.totalAmount)}` : ''}${booking.notes ? `
+- Ghi chu          : ${booking.notes}` : ''}
 
 QUY TRINH TIEP THEO:
-1. Nhan vien se den lay do dung khung gio da chon.
-2. Ban nhan thong bao khi do duoc giat.
-3. Do sach thom duoc giao tra tai dia chi cua ban.
+1. Nhan vien se lien he va den lay do theo yeu cau.
+2. Ban nhan thong bao khi do duoc giat theo tieu chuan cao cap.
+3. Do sach thom duoc giao tra tan noi theo dung phuong thuc da chon.
 `;
-
-  if (giftCard) {
-    text += `
-==================================================
-THE QUA TANG KEM THEO
-==================================================
-Ma the  : ${giftCard.code}
-Gia tri : ${formatCurrency(giftCard.amount)}
-Tu      : ${giftCard.senderName}
-Loi nhan: ${giftCard.message || 'Chuc ban luon vui ve!'}
-
-Cach su dung: Truy cap tlaundry.vn, dat dich vu va nhap ma the tai buoc thanh toan.
-`;
-  }
 
   text += `
 --------------------------------------------------
@@ -221,11 +207,13 @@ const buildPart2_OrderDetail = (booking) => {
   const {
     firstName, lastName, phone,
     serviceType, pickupDate, pickupTime,
-    address, suburb, state, notes, frequency, totalAmount
+    address, suburb, state, notes, frequency, totalAmount,
+    detergent, softener, deliverySpeed, expressFee
   } = booking;
 
   const fullName   = `${firstName} ${lastName}`;
-  const fullAddress = `${address}, ${suburb}, ${state}`;
+  const addressParts = [address, suburb, state].filter(Boolean);
+  const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : address;
 
   const infoRow = (label, value) => `
     <tr>
@@ -234,11 +222,10 @@ const buildPart2_OrderDetail = (booking) => {
     </tr>
   `;
 
-  const freqLabel = frequency === 'weekly'
-    ? 'Hàng tuần'
-    : frequency === 'fortnightly'
-    ? 'Hai tuần một lần'
-    : 'Một lần';
+  const isExpress = deliverySpeed === 'express';
+  const deliveryLabel = isExpress 
+    ? `<span style="color:#d97706;font-weight:700;">⚡ Hỏa tốc 4h-6h (+${formatCurrency(expressFee || 30000)})</span>`
+    : '🚚 Tiêu chuẩn 24h (Miễn phí)';
 
   return `
     <!-- PHẦN 2: CHI TIẾT ĐƠN HÀNG -->
@@ -247,11 +234,11 @@ const buildPart2_OrderDetail = (booking) => {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${infoRow('👤 Khách hàng', fullName)}
       ${infoRow('📱 Số điện thoại', phone)}
-      ${infoRow('🧺 Dịch vụ', serviceType)}
-      ${infoRow('📅 Ngày lấy đồ', formatDate(pickupDate))}
-      ${infoRow('🕐 Khung giờ', pickupTime || 'Buổi sáng (8am–12pm)')}
-      ${infoRow('🔄 Tần suất', freqLabel)}
-      ${infoRow('📍 Địa chỉ', fullAddress)}
+      ${infoRow('🧺 Dịch vụ', serviceType || 'Giặt Ủi Gia Đình')}
+      ${infoRow('🌿 Nước giặt', detergent || 'Organic Sinh Học')}
+      ${infoRow('🌸 Nước xả', softener || 'Hương Oải Hương (Lavender)')}
+      ${infoRow('🚀 Giao nhận', deliveryLabel)}
+      ${infoRow('📍 Địa chỉ nhận', fullAddress)}
       ${totalAmount ? infoRow('💰 Tổng tiền', formatCurrency(totalAmount)) : ''}
       ${notes ? infoRow('📝 Ghi chú', notes) : ''}
     </table>
@@ -262,26 +249,26 @@ const buildPart2_OrderDetail = (booking) => {
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td style="width:32px;vertical-align:top;padding-top:2px;">
-            <div style="width:24px;height:24px;background:#1a56db;border-radius:50%;text-align:center;line-height:24px;color:#fff;font-size:12px;font-weight:700;">1</div>
+            <div style="width:24px;height:24px;background:#069494;border-radius:50%;text-align:center;line-height:24px;color:#fff;font-size:12px;font-weight:700;">1</div>
           </td>
           <td style="padding:0 0 10px 10px;color:#4b5563;font-size:14px;line-height:1.5;">
-            Nhân viên sẽ đến lấy đồ đúng khung giờ đã chọn.
+            Nhân viên sẽ liên hệ và đến nhận đồ tại địa chỉ đã cung cấp.
           </td>
         </tr>
         <tr>
           <td style="width:32px;vertical-align:top;padding-top:2px;">
-            <div style="width:24px;height:24px;background:#1a56db;border-radius:50%;text-align:center;line-height:24px;color:#fff;font-size:12px;font-weight:700;">2</div>
+            <div style="width:24px;height:24px;background:#069494;border-radius:50%;text-align:center;line-height:24px;color:#fff;font-size:12px;font-weight:700;">2</div>
           </td>
           <td style="padding:0 0 10px 10px;color:#4b5563;font-size:14px;line-height:1.5;">
-            Bạn nhận thông báo khi đồ đang được giặt.
+            Đồ được phân loại, giặt sấy riêng biệt với mẫu nước giặt xả bạn đã chọn.
           </td>
         </tr>
         <tr>
           <td style="width:32px;vertical-align:top;padding-top:2px;">
-            <div style="width:24px;height:24px;background:#1a56db;border-radius:50%;text-align:center;line-height:24px;color:#fff;font-size:12px;font-weight:700;">3</div>
+            <div style="width:24px;height:24px;background:#069494;border-radius:50%;text-align:center;line-height:24px;color:#fff;font-size:12px;font-weight:700;">3</div>
           </td>
           <td style="padding:0 0 0 10px;color:#4b5563;font-size:14px;line-height:1.5;">
-            Đồ sạch thơm được giao trả tận địa chỉ của bạn.
+            Quần áo thơm tho, gấp phẳng phiu và giao trả tận tay đúng hẹn.
           </td>
         </tr>
       </table>
@@ -289,94 +276,22 @@ const buildPart2_OrderDetail = (booking) => {
   `;
 };
 
-// ─── Phần 3 (Có điều kiện): Gift Card ────────────────────────────────────────
-const buildPart3_GiftCard = (giftCard) => {
-  if (!giftCard) return ''; // Không render nếu không có Gift Card
-
-  const {
-    code,
-    amount,
-    recipientName,
-    senderName,
-    message: personalMessage,
-    deliveryDate,
-  } = giftCard;
-
-  const formattedAmount = formatCurrency(amount);
-
-  return `
-    <!-- PHẦN 3: GIFT CARD (CÓ ĐIỀU KIỆN) -->
-    <h3 style="margin:0 0 6px;color:#374151;font-size:16px;font-weight:700;">🎁 Thẻ quà tặng đính kèm</h3>
-    <p style="margin:0 0 20px;color:#64748b;font-size:14px;">
-      Bạn có một thẻ quà tặng kèm theo đơn hàng này. Hãy lưu lại để sử dụng!
-    </p>
-
-    <!-- Gift Card Visual — thiết kế để chụp màn hình / forward email -->
-    <div style="background:linear-gradient(135deg,#1a56db 0%,#7c3aed 55%,#0ea5e9 100%);border-radius:18px;padding:36px 28px;text-align:center;margin-bottom:20px;">
-      <p style="margin:0 0 4px;color:rgba(255,255,255,0.75);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:3px;">✨ TLaundry Gift Card ✨</p>
-      <p style="margin:0 0 4px;color:rgba(255,255,255,0.9);font-size:14px;">Dành cho <strong>${recipientName || 'Bạn'}</strong></p>
-      <p style="margin:0 0 24px;color:#ffffff;font-size:52px;font-weight:800;line-height:1;">${formattedAmount}</p>
-
-      <!-- Mã thẻ nổi bật -->
-      <div style="background:rgba(255,255,255,0.12);border:2px dashed rgba(255,255,255,0.55);border-radius:12px;padding:16px 24px;display:inline-block;min-width:240px;">
-        <p style="margin:0 0 6px;color:rgba(255,255,255,0.75);font-size:10px;text-transform:uppercase;letter-spacing:3px;">Mã thẻ quà tặng</p>
-        <p style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:6px;font-family:monospace;">${code}</p>
-      </div>
-
-      ${deliveryDate ? `<p style="margin:16px 0 0;color:rgba(255,255,255,0.7);font-size:12px;">📅 Hiệu lực từ: ${formatDate(deliveryDate)}</p>` : ''}
-    </div>
-
-    <!-- Lời nhắn cá nhân -->
-    <div style="background:#fdf4ff;border-left:4px solid #a855f7;border-radius:0 10px 10px 0;padding:16px 20px;margin-bottom:20px;">
-      <p style="margin:0 0 6px;color:#7e22ce;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
-        💌 Lời nhắn từ ${senderName || 'người tặng'}
-      </p>
-      <p style="margin:0;color:#374151;font-size:15px;font-style:italic;line-height:1.7;">
-        "${personalMessage || 'Chúc bạn luôn vui vẻ và có những bộ quần áo sạch sẽ thơm tho! 🌸'}"
-      </p>
-    </div>
-
-    <!-- Hướng dẫn sử dụng -->
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px 20px;margin-bottom:20px;">
-      <h4 style="margin:0 0 10px;color:#166534;font-size:14px;font-weight:700;">🛍️ Cách sử dụng</h4>
-      <ol style="margin:0;padding-left:18px;color:#374151;font-size:14px;line-height:2.1;">
-        <li>Truy cập <a href="https://tlaundry.vn" style="color:#16a34a;font-weight:600;">tlaundry.vn</a> và đặt dịch vụ.</li>
-        <li>Nhập mã thẻ <strong style="color:#166534;letter-spacing:2px;">${code}</strong> tại bước thanh toán.</li>
-        <li>Giá trị thẻ sẽ được khấu trừ vào tổng đơn.</li>
-      </ol>
-    </div>
-
-    <!-- CTA Button -->
-    <div style="text-align:center;margin-bottom:8px;">
-      <a href="https://tlaundry.vn/dat-lich"
-         style="display:inline-block;background:linear-gradient(135deg,#1a56db,#7c3aed);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:10px;font-size:15px;font-weight:700;letter-spacing:0.3px;">
-        🧺 Dùng thẻ quà — Đặt lịch ngay
-      </a>
-    </div>
-  `;
-};
-
 // ─── Build HTML hoàn chỉnh ────────────────────────────────────────────────────
 /**
- * Tạo nội dung HTML gộp đủ 3 phần (hoặc 2 phần nếu không có gift card)
- * @param {Object} booking  - Booking document
- * @param {Object|null} giftCard - GiftCard document (có thể null)
+ * Tạo nội dung HTML xác nhận đơn hàng
+ * @param {Object} booking - Booking document
  */
-const buildUnifiedEmailHtml = (booking, giftCard = null) => {
-  const shopName  = process.env.EMAIL_FROM_NAME || 'TLaundry';
-  const titleSuffix = giftCard ? ' & Thẻ quà tặng của bạn 🎁' : '';
-  const subject = `${shopName} - Xác nhận đơn hàng #${booking.orderCode}${titleSuffix}`;
+const buildUnifiedEmailHtml = (booking) => {
+  const shopName = process.env.EMAIL_FROM_NAME || 'TLaundry';
+  const subject = `${shopName} - Xác nhận đơn hàng #${booking.orderCode}`;
 
   const part1 = buildPart1_Greeting(booking);
   const part2 = buildPart2_OrderDetail(booking);
-  const part3 = buildPart3_GiftCard(giftCard);
 
   const bodyContent = `
     ${part1}
     ${sectionDivider()}
     ${part2}
-    ${giftCard ? sectionDivider() : ''}
-    ${part3}
     <p style="margin:28px 0 0;color:#64748b;font-size:13px;text-align:center;">
       Có thắc mắc? Liên hệ chúng tôi tại
       <a href="mailto:support@tlaundry.vn" style="color:#1a56db;font-weight:600;">support@tlaundry.vn</a>
@@ -393,31 +308,23 @@ const buildUnifiedEmailHtml = (booking, giftCard = null) => {
 
 /**
  * Gửi 1 email duy nhất:
- *   - To   → Email khách hàng (xác nhận đặt lịch + gift card nếu có)
+ *   - To   → Email khách hàng (xác nhận đặt lịch)
  *   - BCC  → Admin/Chủ tiệm (tự động nhận bản sao, không cần email riêng)
  *
- * @param {Object}      booking  - Booking document từ MongoDB
- * @param {Object|null} giftCard - GiftCard document (optional, truyền null nếu không có)
- *
- * @example
- *   // Đơn thường (không có gift card)
- *   await sendBookingConfirmation(booking);
- *
- *   // Đơn kèm gift card
- *   await sendBookingConfirmation(booking, giftCard);
+ * @param {Object} booking - Booking document từ MongoDB
  */
-export const sendBookingConfirmation = async (booking, giftCard = null) => {
+export const sendBookingConfirmation = async (booking) => {
   if (!isEmailConfigured()) {
     console.warn('⚠️  [Email] EMAIL_USER hoặc EMAIL_PASS chưa được cấu hình. Bỏ qua gửi email.');
     return { success: false, reason: 'not_configured' };
   }
 
   const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
-  const { html, subject } = buildUnifiedEmailHtml(booking, giftCard);
+  const { html, subject } = buildUnifiedEmailHtml(booking);
 
   try {
     const transporter = createTransporter();
-    const plainText  = buildBookingPlainText(booking, giftCard);
+    const plainText  = buildBookingPlainText(booking);
 
     const info = await transporter.sendMail({
       from:     FROM_ADDRESS(),
@@ -435,9 +342,8 @@ export const sendBookingConfirmation = async (booking, giftCard = null) => {
       },
     });
 
-    const giftCardNote = giftCard ? ` + Gift Card [${giftCard.code}]` : '';
     console.log(
-      `✅ [Email] Booking confirmation${giftCardNote} → To: ${booking.email} | BCC: ${adminEmail} | MsgID: ${info.messageId}`
+      `✅ [Email] Booking confirmation → To: ${booking.email} | BCC: ${adminEmail} | MsgID: ${info.messageId}`
     );
 
     return { success: true, messageId: info.messageId };
@@ -449,129 +355,7 @@ export const sendBookingConfirmation = async (booking, giftCard = null) => {
 };
 
 
-/**
- * Gửi email Gift Card độc lập đến người NHẬN THẺ (khi admin gửi gift card riêng,
- * không liên quan đến booking — ví dụ: quà tặng trực tiếp).
- *
- * @param {Object} giftCard - GiftCard document từ MongoDB
- */
-export const sendGiftCardToRecipient = async (giftCard) => {
-  if (!isEmailConfigured()) {
-    console.warn('⚠️  [Email] EMAIL_USER hoặc EMAIL_PASS chưa được cấu hình. Bỏ qua gửi gift card email.');
-    return { success: false, reason: 'not_configured' };
-  }
 
-  const {
-    code, amount, recipientName, recipientEmail,
-    senderName, senderEmail, deliveryDate, message: personalMessage,
-  } = giftCard;
-
-  const shopName     = process.env.EMAIL_FROM_NAME || 'TLaundry';
-  const formattedAmt = formatCurrency(amount);
-  const adminEmail   = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
-
-  // Build standalone gift card email
-  const bodyContent = `
-    <div style="text-align:center;margin-bottom:28px;">
-      <p style="margin:0 0 8px;color:#64748b;font-size:15px;">Xin chào <strong>${recipientName}</strong>! 🎁</p>
-      <h2 style="margin:0;color:#1e293b;font-size:24px;font-weight:700;">Bạn vừa nhận được một món quà đặc biệt!</h2>
-    </div>
-
-    <!-- Gift Card Visual -->
-    <div style="background:linear-gradient(135deg,#1a56db 0%,#7c3aed 55%,#0ea5e9 100%);border-radius:18px;padding:36px 28px;text-align:center;margin-bottom:24px;">
-      <p style="margin:0 0 4px;color:rgba(255,255,255,0.75);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:3px;">✨ TLaundry Gift Card ✨</p>
-      <p style="margin:0 0 4px;color:rgba(255,255,255,0.9);font-size:14px;">Dành cho <strong>${recipientName}</strong></p>
-      <p style="margin:0 0 24px;color:#ffffff;font-size:52px;font-weight:800;line-height:1;">${formattedAmt}</p>
-      <div style="background:rgba(255,255,255,0.12);border:2px dashed rgba(255,255,255,0.55);border-radius:12px;padding:16px 24px;display:inline-block;min-width:240px;">
-        <p style="margin:0 0 6px;color:rgba(255,255,255,0.75);font-size:10px;text-transform:uppercase;letter-spacing:3px;">Mã thẻ quà tặng</p>
-        <p style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:6px;font-family:monospace;">${code}</p>
-      </div>
-      ${deliveryDate ? `<p style="margin:16px 0 0;color:rgba(255,255,255,0.7);font-size:12px;">📅 Hiệu lực từ: ${formatDate(deliveryDate)}</p>` : ''}
-    </div>
-
-    <!-- Lời nhắn -->
-    <div style="background:#fdf4ff;border-left:4px solid #a855f7;border-radius:0 10px 10px 0;padding:16px 20px;margin-bottom:20px;">
-      <p style="margin:0 0 6px;color:#7e22ce;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
-        💌 Lời nhắn từ ${senderName}
-      </p>
-      <p style="margin:0;color:#374151;font-size:15px;font-style:italic;line-height:1.7;">
-        "${personalMessage || 'Chúc bạn luôn vui vẻ và có những bộ quần áo sạch sẽ thơm tho! 🌸'}"
-      </p>
-    </div>
-
-    <!-- Hướng dẫn -->
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px 20px;margin-bottom:20px;">
-      <h4 style="margin:0 0 10px;color:#166534;font-size:14px;font-weight:700;">🛍️ Cách sử dụng</h4>
-      <ol style="margin:0;padding-left:18px;color:#374151;font-size:14px;line-height:2.1;">
-        <li>Truy cập <a href="https://tlaundry.vn" style="color:#16a34a;font-weight:600;">tlaundry.vn</a> và đặt dịch vụ.</li>
-        <li>Nhập mã thẻ <strong style="color:#166534;letter-spacing:2px;">${code}</strong> tại bước thanh toán.</li>
-        <li>Giá trị thẻ sẽ được khấu trừ vào tổng đơn.</li>
-      </ol>
-    </div>
-
-    <div style="text-align:center;margin-bottom:8px;">
-      <a href="https://tlaundry.vn/dat-lich"
-         style="display:inline-block;background:linear-gradient(135deg,#1a56db,#7c3aed);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:10px;font-size:15px;font-weight:700;">
-        🧺 Dùng thẻ quà — Đặt lịch ngay
-      </a>
-    </div>
-
-    <div style="border-top:1px solid #e5e7eb;margin-top:28px;padding-top:16px;">
-      <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
-        Thẻ tặng từ <strong>${senderName}</strong> (${senderEmail || ''}) &nbsp;·&nbsp;
-        ${deliveryDate ? `Ngày giao: ${formatDate(deliveryDate)} &nbsp;·&nbsp;` : ''}
-        Mã: <strong>${code}</strong>
-      </p>
-    </div>
-  `;
-
-  // Bỏ emoji ở đầu subject — một số spam filter phạt emoji đầu dòng
-  const emailSubject = `The qua tang TLaundry tri gia ${formattedAmt} tu ${senderName}`;
-
-  const plainText = `Xin chao ${recipientName},
-
-${senderName} da tang ban mot the qua tu ${shopName}!
-
-Gia tri the : ${formattedAmt}
-Ma the      : ${code}
-Loi nhan    : ${personalMessage || 'Chuc ban luon vui ve!'}
-
-Cach su dung:
-1. Truy cap tlaundry.vn va dat dich vu.
-2. Nhap ma the '${code}' tai buoc thanh toan.
-3. Gia tri the se duoc khau tru vao tong don.
-
-Lien he ho tro: support@tlaundry.vn
-${shopName} - Dich vu giat ui chuyen nghiep
-`;
-
-  try {
-    const transporter = createTransporter();
-
-    const info = await transporter.sendMail({
-      from:     FROM_ADDRESS(),
-      to:       recipientEmail,
-      bcc:      adminEmail,
-      replyTo:  REPLY_TO(),
-      subject:  emailSubject,
-      text:     plainText,         // [ANTI-SPAM] Plain text bắt buộc
-      html:     baseLayout(emailSubject, bodyContent),
-      headers: {
-        'X-Mailer':        'TLaundry Mailer 1.0',
-        'X-Priority':      '3',
-        'X-Entity-Ref-ID': code,
-        'Precedence':      'bulk',
-      },
-    });
-
-    console.log(`✅ [Email] Gift card [${code}] → To: ${recipientEmail} | BCC: ${adminEmail} | MsgID: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
-
-  } catch (error) {
-    console.error(`❌ [Email] Failed to send gift card email to ${recipientEmail}:`, error.message);
-    return { success: false, error: error.message };
-  }
-};
 
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -9,7 +9,6 @@ import jwt from 'jsonwebtoken';
 import connectDB from './config/db.js';
 import Contact from './models/Contact.js';
 import Booking from './models/Booking.js';
-import GiftCard from './models/GiftCard.js';
 import Newsletter from './models/Newsletter.js';
 import User from './models/User.js';
 import Service from './models/Service.js';
@@ -28,19 +27,67 @@ import {
   changePasswordSchema,
   bookingSchema,
   contactSchema,
-  giftCardSchema,
   newsletterSchema,
   adminCreateUserSchema,
 } from './middleware/validate.js';
 import errorHandler from './middleware/errorHandler.js';
 import { seedServicesAndPricing, seedDemoUsers } from './seedData.js';
 import {
-  sendBookingConfirmation,   // Luồng duy nhất: To=khách, BCC=admin, Gift Card tùy chọn
-  sendGiftCardToRecipient    // Gửi gift card độc lập (không kèm booking)
+  sendBookingConfirmation,   // Gửi email xác nhận đơn hàng: To=khách, BCC=admin
 } from './services/emailService.js';
 
 
 dotenv.config();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENV GUARD — Kiểm tra secrets bắt buộc ngay khi khởi động
+// ══════════════════════════════════════════════════════════════════════════════
+const REQUIRED_ENV = [
+  'MONGO_URI',
+  'JWT_SECRET',
+  'JWT_REFRESH_SECRET',
+  'EMAIL_USER',
+  'EMAIL_PASS',
+];
+
+const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missing.length > 0) {
+  console.error(`\n❌ [ENV ERROR] Thiếu biến môi trường bắt buộc: ${missing.join(', ')}`);
+  console.error('   → Sao chép backend/.env.example thành backend/.env và điền đầy đủ.\n');
+  process.exit(1);
+}
+
+// Kiểm tra secrets yếu / placeholder
+const PLACEHOLDER_PATTERNS = ['<replace_with', 'your_jwt_secret', 'xxx', '<new_'];
+const weakEnvs = ['JWT_SECRET', 'JWT_REFRESH_SECRET'].filter((key) => {
+  const val = process.env[key] || '';
+  const tooShort = val.length < 32;
+  const isPlaceholder = PLACEHOLDER_PATTERNS.some((p) => val.toLowerCase().includes(p));
+  return tooShort || isPlaceholder;
+});
+
+if (weakEnvs.length > 0) {
+  const isProd = process.env.NODE_ENV === 'production';
+  const msg = `⚠️  [ENV WARNING] Secrets quá yếu hoặc placeholder: ${weakEnvs.join(', ')}\n`
+    + '   → Tạo secret mạnh: node backend/generate-secrets.js';
+  if (isProd) {
+    console.error('\n❌ ' + msg + '\n');
+    process.exit(1); // Crash cứng ở production
+  } else {
+    console.warn('\n' + msg + '\n'); // Chỉ cảnh báo ở dev
+  }
+}
+
+// Chặn dùng secrets đã bị lộ công khai — luôn crash bất kể môi trường
+const KNOWN_LEAKED = [
+  'tlaundry_super_secret_jwt_key_2026_secured_889922',
+  'tlaundry_refresh_super_secret_key_2026_rt_009988',
+];
+if (KNOWN_LEAKED.includes(process.env.JWT_SECRET) || KNOWN_LEAKED.includes(process.env.JWT_REFRESH_SECRET)) {
+  console.error('\n🚨 [SECURITY ALERT] Đang dùng JWT secret đã bị lộ! Server từ chối khởi động.');
+  console.error('   → Chạy: node backend/generate-secrets.js để tạo secrets mới.\n');
+  process.exit(1);
+}
 
 // 1. Kết nối MongoDB Atlas & Tự động Seed Dữ Liệu
 connectDB().then(async () => {
@@ -707,35 +754,7 @@ app.patch('/api/contact/:id/unresolve', protect, authorize('ADMIN', 'STAFF'), as
 });
 
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// GIFT CARD APIS
-// ═══════════════════════════════════════════════════════════════════════════════
 
-app.post('/api/gift-cards', validate(giftCardSchema), async (req, res, next) => {
-  try {
-    // req.body đã được validate & sanitize bởi Zod (giftCardSchema)
-    const randomCode = 'TL-' + Math.floor(100000 + Math.random() * 900000);
-    const newCard = await GiftCard.create({
-      ...req.body,
-      code: randomCode,
-    });
-
-    console.log('✅ New GiftCard Saved to MongoDB:', newCard.code);
-
-    // 📧 Gửi email gift card bất đồng bộ (fire-and-forget) — không block API response
-    sendGiftCardToRecipient(newCard)
-      .catch(err => console.error('❌ [Email] Unexpected error in gift card email:', err.message));
-
-    res.status(201).json({
-      success: true,
-      message: 'Đặt mua thẻ quà tặng thành công! Mã thẻ của bạn là: ' + newCard.code,
-      code: newCard.code,
-      data: newCard
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ADMIN DASHBOARD & THỐNG KÊ
@@ -780,28 +799,23 @@ app.get('/api/admin/dashboard', protect, authorize('ADMIN', 'STAFF'), async (req
       ])
     ]);
 
-    // --- Thống kê Doanh thu (tổng mệnh giá Gift Card đã bán) ---
+    // --- Thống kê Doanh thu (dựa trên các đơn giặt ủi COMPLETED) ---
     const [
-      totalGiftCardsSold,
-      giftCardsSoldToday,
-      giftCardsSoldThisMonth,
       revenueToday,
       revenueThisMonth,
       revenueTotal
     ] = await Promise.all([
-      GiftCard.countDocuments(),
-      GiftCard.countDocuments({ createdAt: { $gte: todayStart, $lte: todayEnd } }),
-      GiftCard.countDocuments({ createdAt: { $gte: monthStart, $lte: monthEnd } }),
-      GiftCard.aggregate([
-        { $match: { createdAt: { $gte: todayStart, $lte: todayEnd } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+      Booking.aggregate([
+        { $match: { createdAt: { $gte: todayStart, $lte: todayEnd }, status: 'COMPLETED' } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]),
-      GiftCard.aggregate([
-        { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+      Booking.aggregate([
+        { $match: { createdAt: { $gte: monthStart, $lte: monthEnd }, status: 'COMPLETED' } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]),
-      GiftCard.aggregate([
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+      Booking.aggregate([
+        { $match: { status: 'COMPLETED' } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ])
     ]);
 
@@ -842,11 +856,6 @@ app.get('/api/admin/dashboard', protect, authorize('ADMIN', 'STAFF'), async (req
           cancelled: cancelledOrders,
           byStatus: ordersByStatus
         },
-        giftCards: {
-          totalSold: totalGiftCardsSold,
-          soldToday: giftCardsSoldToday,
-          soldThisMonth: giftCardsSoldThisMonth
-        },
         revenue: {
           today: revenueToday[0]?.total || 0,
           thisMonth: revenueThisMonth[0]?.total || 0,
@@ -871,14 +880,7 @@ app.get('/api/admin/dashboard', protect, authorize('ADMIN', 'STAFF'), async (req
 });
 
 
-app.get('/api/gift-cards', protect, authorize('ADMIN', 'STAFF'), async (req, res) => {
-  try {
-    const cards = await GiftCard.find().sort({ createdAt: -1 });
-    res.json({ success: true, count: cards.length, data: cards });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+
 
 
 // ═══════════════════════════════════════════════════════════════════════════════

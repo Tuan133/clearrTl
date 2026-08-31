@@ -1,7 +1,62 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReviewsCarousel from '../components/ReviewsCarousel';
 import { useLanguage } from '../context/LanguageContext';
 import { WHY_ICONS } from '../components/WhyIcons';
+
+const customerVideos = [
+  {
+    id: 'video-1',
+    name: 'Chị Hoàng Yến',
+    handle: '@hoangyen.pham',
+    roleVi: 'Trưởng phòng Marketing • Quận 1, TP.HCM',
+    roleEn: 'Marketing Manager • District 1, HCMC',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&q=80',
+    poster: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    serviceVi: 'Giặt Sấy & Gấp Gọn Tiêu Chuẩn',
+    serviceEn: 'Standard Wash, Dry & Fold',
+    quoteVi: '“Đồ giặt giao về thơm phức hương hoa, từng chiếc sơ mi gấp phẳng phiu. Tiết kiệm cho mình cả buổi tối bận rộn!”',
+    quoteEn: '“Clothes arrived smelling fresh with delicate floral scent, perfectly folded. Saved me entire busy evenings!”',
+    duration: '0:45',
+    views: '14.5K',
+    rating: 5,
+  },
+  {
+    id: 'video-2',
+    name: 'Anh Minh Tuấn',
+    handle: '@tuanminh.ceo',
+    roleVi: 'Chủ chuỗi F&B • Thảo Điền, TP. Thủ Đức',
+    roleEn: 'F&B Business Owner • Thao Dien',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&q=80',
+    poster: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    serviceVi: 'Giặt Hấp Áo Vest & Sơ Mi Cao Cấp',
+    serviceEn: 'Premium Dry Cleaning & Suit Care',
+    quoteVi: '“Bộ vest đắt tiền giao đi nhận về giữ nguyên form dáng, sợi vải mềm và phẳng phiu. Dịch vụ đúng chuẩn 5 sao!”',
+    quoteEn: '“My expensive suits retained their perfect shape, crisp and elegant. Truly 5-star professional service!”',
+    duration: '1:10',
+    views: '28.2K',
+    rating: 5,
+  },
+  {
+    id: 'video-3',
+    name: 'Gia đình Chị Mai Phương',
+    handle: '@phuongmai.family',
+    roleVi: 'Bác sĩ Nha khoa • Landmark 81, Bình Thạnh',
+    roleEn: 'Dentist • Landmark 81, Binh Thanh',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&q=80',
+    poster: 'https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=800&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    serviceVi: 'Nước Giặt Organic Sinh Học Cho Bé',
+    serviceEn: 'Baby Organic Hypoallergenic Formula',
+    quoteVi: '“Da bé nhà mình cực kỳ nhạy cảm nhưng nước giặt organic của TLaundry êm dịu vô cùng, shipper giao tận cửa đúng giờ.”',
+    quoteEn: '“Baby skin is super sensitive but TLaundry organic wash is so gentle, pickup and delivery right on time.”',
+    duration: '0:55',
+    views: '19.8K',
+    rating: 5,
+  },
+];
 
 const instaPosts = [
   { img: 'https://images.unsplash.com/photo-1604335399105-a0c585fd81a1?w=300&q=80', label: 'Gumdale' },
@@ -59,15 +114,27 @@ const newsItemsEn = [
 const HomePage = () => {
   const navigate = useNavigate();
   const { lang, t } = useLanguage();
+  const [activeVideo, setActiveVideo] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setActiveVideo(null);
+    };
+    if (activeVideo) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeVideo]);
 
   const newsItems = lang === 'vi' ? newsItemsVi : newsItemsEn;
 
-  const serviceImages = [
-    { name: t.header.domestic, img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80' },
-    { name: t.header.commercial, img: 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=300&q=80' },
-    { name: t.header.ironing, img: 'https://images.unsplash.com/photo-1616587226960-4a03badbe8bf?w=300&q=80' },
-    { name: t.header.dryCleaning, img: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=300&q=80' },
-  ];
+
 
   return (
     <main>
@@ -76,73 +143,21 @@ const HomePage = () => {
         <div className="container">
           <div className="hero-grid">
 
-            {/* ── Cột trái: nội dung chính ── */}
+            {/* ── Nội dung chính ── */}
             <div className="hero-content">
               <h1>
-                {t.hero.title1}{' '}
-                <span>{t.hero.title2}</span>{' '}
-                {t.hero.title3}
+                <span className="hero-title-line">{t.hero.title1}</span>
+                <span className="hero-title-line hero-title-line--accent">{t.hero.title2}</span>
+                <span className="hero-title-line">{t.hero.title3}</span>
               </h1>
-              <p>{t.hero.subtitle}</p>
+              <p className="hero-subtitle">
+                <span className="hero-subtitle-line">{t.hero.sub1}</span>
+                <span className="hero-subtitle-line">{t.hero.sub2}</span>
+                <span className="hero-subtitle-line">{t.hero.sub3}</span>
+              </p>
               <button className="hero-btn" onClick={() => navigate('/booking')}>
                 {t.hero.btnQuote}
               </button>
-            </div>
-
-            {/* ── Cột phải: Quick Booking Card ── */}
-            <div className="hero-card">
-              <div className="hero-card-title">
-                {lang === 'vi' ? '📦 Đặt Dịch Vụ Nhanh' : '📦 Quick Booking'}
-              </div>
-              <div className="hero-card-sub">
-                {lang === 'vi' ? 'Nhận & Giao tận nơi trong 24h' : 'Pickup & Delivery within 24h'}
-              </div>
-
-              <div className="hero-card-form">
-                <div className="hero-card-field">
-                  <label>{lang === 'vi' ? 'Dịch vụ' : 'Service'}</label>
-                  <select onClick={(e) => e.stopPropagation()} onChange={(e) => {
-                    if (e.target.value) navigate('/booking');
-                  }}>
-                    <option value="">{lang === 'vi' ? '— Chọn dịch vụ —' : '— Select service —'}</option>
-                    <option>{lang === 'vi' ? 'Giặt & Sấy Gia Đình' : 'Domestic Wash & Dry'}</option>
-                    <option>{lang === 'vi' ? 'Giặt Thương Mại' : 'Commercial Laundry'}</option>
-                    <option>{lang === 'vi' ? 'Giặt Ủi' : 'Wash & Iron'}</option>
-                    <option>{lang === 'vi' ? 'Giặt Khô' : 'Dry Cleaning'}</option>
-                  </select>
-                </div>
-
-                <div className="hero-card-field">
-                  <label>{lang === 'vi' ? 'Địa chỉ lấy hàng' : 'Pickup address'}</label>
-                  <input
-                    type="text"
-                    placeholder={lang === 'vi' ? 'Nhập địa chỉ của bạn…' : 'Enter your address…'}
-                    onFocus={(e) => { e.target.placeholder = ''; }}
-                    onBlur={(e) => { e.target.placeholder = lang === 'vi' ? 'Nhập địa chỉ của bạn…' : 'Enter your address…'; }}
-                  />
-                </div>
-
-                <div className="hero-card-divider" />
-
-                <button className="hero-card-btn" onClick={() => navigate('/booking')}>
-                  {lang === 'vi' ? 'Yêu Cầu Báo Giá Miễn Phí →' : 'Get a Free Quote →'}
-                </button>
-              </div>
-
-              <div className="hero-card-badges">
-                <span className="hero-card-badge">
-                  <span className="hero-card-badge-dot" />
-                  {lang === 'vi' ? 'Báo giá miễn phí' : 'Free quote'}
-                </span>
-                <span className="hero-card-badge">
-                  <span className="hero-card-badge-dot" />
-                  {lang === 'vi' ? 'Giao trong 24h' : '24h delivery'}
-                </span>
-                <span className="hero-card-badge">
-                  <span className="hero-card-badge-dot" />
-                  {lang === 'vi' ? 'Cam kết chất lượng' : 'Quality guaranteed'}
-                </span>
-              </div>
             </div>
 
           </div>
@@ -164,104 +179,10 @@ const HomePage = () => {
       {/* ===== REVIEWS CAROUSEL ===== */}
       <ReviewsCarousel />
 
-      {/* ===== WHO WE ARE ===== */}
-      <section className="who-we-are">
-        <div className="container">
-          <div className="who-grid">
-            <div className="who-content">
-              <span className="badge">{t.whoWeAre.badge}</span>
-              <h2>
-                {lang === 'vi'
-                  ? <><em>Dịch Vụ Giặt Ủi</em> Di Động Nhận & Giao Tận Nơi Được Tin Tưởng Nhất tại Sài Gòn</>
-                  : <><em>Mobile Laundry</em> Pick-up & Delivery — Sài Gòn's Most Trusted</>}
-              </h2>
-              <p>{t.whoWeAre.desc1}</p>
-              <p>{t.whoWeAre.desc2}</p>
-              <div className="who-features">
-                {t.whoWeAre.features.map(f => (
-                  <div key={f} className="who-feature">
-                    <div className="who-feature-icon">✓</div>
-                    {f}
-                  </div>
-                ))}
-              </div>
-              <button className="btn btn-primary" onClick={() => navigate('/about')}>
-                {t.whoWeAre.btnLearn}
-              </button>
-            </div>
-            <div className="who-video">
-              <img
-                src="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=700&q=80"
-                alt="TLaundry team"
-              />
-              <div className="play-btn">
-                <div className="play-circle">
-                  <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ===== 3-STEP PROMO CARDS ===== */}
-      <section className="promo-grid-section">
-        <div className="container">
-          <div className="promo-grid">
-            {t.promoCards.map((card, idx) => (
-              <div key={card.num} className="promo-card">
-                <img
-                  className="promo-card-img"
-                  src={[
-                    'https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=500&q=80',
-                    'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=500&q=80',
-                    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&q=80',
-                  ][idx]}
-                  alt={card.title}
-                />
-                <div className="promo-card-body">
-                  <div className="promo-num">{card.num}</div>
-                  <h3>{card.title}</h3>
-                  <p>{card.desc}</p>
-                  <button className="btn btn-primary" onClick={() => navigate(card.href)}>
-                    {card.btn}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ===== SERVICES ===== */}
-      <section className="services-section">
-        <div className="container">
-          <div className="services-header">
-            <h2>{t.servicesSection.title}</h2>
-            <p>{t.servicesSection.desc}</p>
-          </div>
-          <span className="badge">{t.servicesSection.badge}</span>
 
-          <div className="services-grid">
-            {serviceImages.map((svc, i) => (
-              <div
-                key={svc.name}
-                className={`service-card ${i === 0 ? 'active' : ''}`}
-                onClick={() => navigate('/services')}
-              >
-                <div className="service-img-wrap">
-                  <img src={svc.img} alt={svc.name} />
-                </div>
-                <div className="service-card-body">
-                  <h3>{svc.name}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* ===== HOW TO BOOK ===== */}
       <section className="how-to-book">
@@ -342,6 +263,37 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* ===== 3-STEP PROMO CARDS ===== */}
+      <section className="promo-grid-section">
+        <div className="container">
+          <div className="promo-grid">
+            {t.promoCards.map((card, idx) => (
+              <div key={card.num} className="promo-card">
+                <img
+                  className="promo-card-img"
+                  src={[
+                    'https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=500&q=80',
+                    'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=500&q=80',
+                    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&q=80',
+                  ][idx]}
+                  alt={card.title}
+                />
+                <div className="promo-card-body">
+                  <div className="promo-num">{card.num}</div>
+                  <h3>{card.title}</h3>
+                  <p>{card.desc}</p>
+                  <button className="btn btn-primary" onClick={() => navigate(card.href)}>
+                    {card.btn}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+
       {/* ===== WHY CHOOSE US ===== */}
       <section className="why-section">
         <div className="container">
@@ -362,77 +314,150 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ===== SOCIAL TESTIMONIALS ===== */}
+      {/* ===== CUSTOMER VIDEO TESTIMONIALS ===== */}
       <section className="social-testimonials">
         <div className="container">
 
           {/* ── Header centered ── */}
           <div className="social-header">
-            <span className="badge">{t.socialTestimonials.badge}</span>
+            <span className="badge">{lang === 'vi' ? 'Video Thực Tế' : 'Real Stories'}</span>
             <div className="social-stars">
               {[1,2,3,4,5].map(i => <span key={i}>★</span>)}
             </div>
             <h2>
               {lang === 'vi'
-                ? <><em>Đánh Giá</em> Từ Khách Hàng</>
-                : <><em>Customer</em> Reviews</>}
+                ? <>Video <em>Đánh Giá</em> Từ Khách Hàng</>
+                : <>Customer <em>Video Reviews</em></>}
             </h2>
-            <p>{t.socialTestimonials.desc}</p>
-            <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={() => navigate('/contact')}>
-              {t.socialTestimonials.btn}
+            <p>
+              {lang === 'vi'
+                ? 'Lắng nghe trải nghiệm chân thực từ những khách hàng đã tin tưởng sử dụng dịch vụ giặt ủi giao nhận của TLaundry.'
+                : 'Hear real stories and authentic reviews from customers who trust TLaundry for their daily laundry care.'}
+            </p>
+            <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={() => navigate('/booking')}>
+              {lang === 'vi' ? 'Đặt Dịch Vụ Ngay →' : 'Book Service Now →'}
             </button>
           </div>
 
-          {/* ── Video grid — 3 cards landscape ── */}
-          <div className="social-videos">
-            {[
-              {
-                handle: '@tlaundrysaigon',
-                label: lang === 'vi' ? 'Nhận đồ tại nhà' : 'Home Pickup',
-                src: 'https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=600&q=80',
-                views: '12K'
-              },
-              {
-                handle: '@tlaundryvn',
-                label: lang === 'vi' ? 'Giặt chuyên nghiệp' : 'Pro Laundry',
-                src: 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=600&q=80',
-                views: '8.4K'
-              },
-              {
-                handle: '@tlaundryhcm',
-                label: lang === 'vi' ? 'Giao tận cửa' : 'Delivered Fresh',
-                src: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&q=80',
-                views: '21K'
-              },
-            ].map(v => (
-              <div key={v.handle} className="social-video-card">
-                <img src={v.src} alt={v.label} loading="lazy" />
-                <div className="video-overlay">
-                  {/* Top: avatar + handle */}
-                  <div className="video-header">
-                    <div className="video-avatar">T</div>
-                    <div className="video-info">
-                      <strong>{v.handle}</strong>
-                      <span>TLaundry</span>
+          {/* ── Video grid — 3 modern vertical cards ── */}
+          <div className="customer-videos-grid">
+            {customerVideos.map(v => {
+              const role = lang === 'vi' ? v.roleVi : v.roleEn;
+              const service = lang === 'vi' ? v.serviceVi : v.serviceEn;
+              const quote = lang === 'vi' ? v.quoteVi : v.quoteEn;
+
+              return (
+                <div
+                  key={v.id}
+                  className="customer-video-card"
+                  onClick={() => setActiveVideo(v)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Xem video đánh giá từ ${v.name}`}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveVideo(v); }}
+                >
+                  {/* Poster Image */}
+                  <img src={v.poster} alt={v.name} className="customer-video-poster" loading="lazy" />
+
+                  {/* Gradient Overlay */}
+                  <div className="customer-video-overlay">
+                    {/* Top: Customer Profile */}
+                    <div className="customer-video-top">
+                      <div className="customer-video-author">
+                        <img src={v.avatar} alt={v.name} className="customer-video-avatar" />
+                        <div className="customer-video-meta">
+                          <div className="customer-video-name">
+                            <strong>{v.name}</strong>
+                            <span className="customer-video-verified" title={lang === 'vi' ? 'Khách hàng đã xác thực' : 'Verified customer'}>
+                              ✓
+                            </span>
+                          </div>
+                          <span className="customer-video-role">{role}</span>
+                        </div>
+                      </div>
+                      <span className="customer-video-service-tag">{service}</span>
+                    </div>
+
+                    {/* Center: Glowing Pulse Play Button */}
+                    <div className="customer-video-play-wrap">
+                      <div className="customer-video-play-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                          <polygon points="6,3 20,12 6,21" />
+                        </svg>
+                      </div>
+                      <span className="customer-video-play-hint">{lang === 'vi' ? 'Bấm để xem video' : 'Tap to watch'}</span>
+                    </div>
+
+                    {/* Bottom: Review quote + Stats */}
+                    <div className="customer-video-bottom">
+                      <div className="customer-video-stars">
+                        {[1,2,3,4,5].map(i => <span key={i}>★</span>)}
+                        <span className="customer-video-score">5.0</span>
+                      </div>
+                      <p className="customer-video-quote">{quote}</p>
+                      <div className="customer-video-stats">
+                        <span className="customer-video-duration">⏱ {v.duration}</span>
+                        <span className="customer-video-views">👁 {v.views}</span>
+                      </div>
                     </div>
                   </div>
-                  {/* Center: play button */}
-                  <div className="play-btn-red">
-                    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
-                      <circle cx="26" cy="26" r="26" fill="rgba(0,0,0,0.45)"/>
-                      <circle cx="26" cy="26" r="22" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.5"/>
-                      <polygon points="21,17 21,35 38,26" fill="white"/>
-                    </svg>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Video Lightbox Modal ── */}
+          {activeVideo && (
+            <div className="video-lightbox-backdrop" onClick={() => setActiveVideo(null)}>
+              <div className="video-lightbox-dialog" onClick={(e) => e.stopPropagation()}>
+                {/* Header */}
+                <div className="video-lightbox-header">
+                  <div className="video-lightbox-author">
+                    <img src={activeVideo.avatar} alt={activeVideo.name} className="video-lightbox-avatar" />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <strong style={{ fontSize: 16, color: '#ffffff' }}>{activeVideo.name}</strong>
+                        <span className="customer-video-verified">✓</span>
+                      </div>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
+                        {lang === 'vi' ? activeVideo.roleVi : activeVideo.roleEn}
+                      </span>
+                    </div>
                   </div>
-                  {/* Bottom: label + views */}
-                  <div className="video-footer-info">
-                    <span className="video-label">{v.label}</span>
-                    <span className="video-views">👁 {v.views}</span>
+                  <button
+                    className="video-lightbox-close"
+                    onClick={() => setActiveVideo(null)}
+                    aria-label="Đóng video"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Video Player */}
+                <div className="video-lightbox-player">
+                  <video
+                    src={activeVideo.videoUrl}
+                    controls
+                    autoPlay
+                    playsInline
+                    poster={activeVideo.poster}
+                    className="video-lightbox-video"
+                  />
+                </div>
+
+                {/* Quote details */}
+                <div className="video-lightbox-footer">
+                  <div className="customer-video-stars" style={{ marginBottom: 6 }}>
+                    {[1,2,3,4,5].map(i => <span key={i}>★</span>)}
+                    <span className="customer-video-score" style={{ color: '#ffffff' }}>5.0 · {lang === 'vi' ? activeVideo.serviceVi : activeVideo.serviceEn}</span>
                   </div>
+                  <p style={{ margin: 0, fontSize: 14.5, color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', lineHeight: 1.6 }}>
+                    {lang === 'vi' ? activeVideo.quoteVi : activeVideo.quoteEn}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
         </div>
       </section>

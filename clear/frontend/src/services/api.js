@@ -148,10 +148,7 @@ export const getAllContactsAdminAPI = (params = {}) => {
 export const resolveContactAPI = (id) => request(`/contact/${id}/resolve`, 'PATCH');
 export const unresolveContactAPI = (id) => request(`/contact/${id}/unresolve`, 'PATCH');
 
-export const getAllGiftCardsAdminAPI = (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return request(`/gift-cards${query ? '?' + query : ''}`, 'GET');
-};
+
 
 export const getAllUsersAdminAPI = (params = {}) => {
   const query = new URLSearchParams(params).toString();
@@ -164,7 +161,6 @@ export const toggleUserActiveAPI = (id) => request(`/admin/users/${id}/toggle-ac
 // ─── Public APIs (Forms) ──────────────────────────────────────────────────────
 export const submitBookingAPI = (bookingData) => request('/bookings', 'POST', bookingData);
 export const submitContactAPI = (contactData) => request('/contact', 'POST', contactData);
-export const submitGiftCardAPI = (giftCardData) => request('/gift-cards', 'POST', giftCardData);
 export const subscribeNewsletterAPI = (email) => request('/newsletter', 'POST', { email });
 
 // ─── Dynamic Data APIs ────────────────────────────────────────────────────────

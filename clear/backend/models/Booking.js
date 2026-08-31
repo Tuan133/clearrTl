@@ -8,11 +8,15 @@ const bookingSchema = new mongoose.Schema({
   email: { type: String, required: true },
   phone: { type: String, required: true },
   address: { type: String, required: true },
-  suburb: { type: String, required: true },
-  state: { type: String, required: true },
-  pickupDate: { type: String, required: true },
-  pickupTime: { type: String, default: 'Morning (8am-12pm)' },
+  suburb: { type: String, default: '' },
+  state: { type: String, default: '' },
+  pickupDate: { type: String, default: '' },
+  pickupTime: { type: String, default: '' },
   frequency: { type: String, default: 'one-off' },
+  detergent: { type: String, default: 'Organic Sinh Học (Eco-Friendly)' },
+  softener: { type: String, default: 'Hương Oải Hương (Lavender)' },
+  deliverySpeed: { type: String, default: 'standard' }, // 'standard' | 'express'
+  expressFee: { type: Number, default: 0 },
   notes: { type: String },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // null nếu guest
   status: {

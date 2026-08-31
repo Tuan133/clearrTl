@@ -248,8 +248,8 @@ const ReviewsCarousel = () => {
           {/* Display heading — Cormorant Garamond với italic accent */}
           <h2>
             {lang === 'vi'
-              ? <>Xem Khách Hàng Nói Gì Về <em>Dịch Vụ Giặt Ủi</em> Của TLaundry</>
-              : <>What Customers Say About Our <em>Laundry Service</em></>}
+              ? <>Xem Khách Hàng Nói Gì Về<br /><span className="reviews-accent">Dịch Vụ Giặt Ủi TLaundry</span></>
+              : <>What Customers Say About Our <span className="reviews-accent">Laundry Service</span></>}
           </h2>
 
           {/* Thin divider */}

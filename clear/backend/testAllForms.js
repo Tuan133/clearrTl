@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import Booking from './models/Booking.js';
 import Contact from './models/Contact.js';
-import GiftCard from './models/GiftCard.js';
 import Newsletter from './models/Newsletter.js';
 
 dotenv.config();
@@ -41,24 +40,11 @@ const testForms = async () => {
     });
     console.log('✅ 2. Contact Form Saved:', contact._id);
 
-    // 3. Test Gift Card submission
-    const giftCard = await GiftCard.create({
-      code: 'TL-' + Math.floor(100000 + Math.random() * 900000),
-      amount: 100,
-      recipientName: 'Đặng Ngọc Mai',
-      recipientEmail: 'mai.dang@example.com',
-      senderName: 'Lê Văn Hùng',
-      senderEmail: 'hung.le@example.com',
-      message: 'Chúc mừng sinh nhật bạn nhé!',
-      deliveryDate: '2026-08-10'
-    });
-    console.log('✅ 3. Gift Card Form Saved:', giftCard.code);
-
-    // 4. Test Newsletter submission
+    // 3. Test Newsletter submission
     const newsletter = await Newsletter.create({
       email: `testsubscriber_${Date.now()}@example.com`
     });
-    console.log('✅ 4. Newsletter Form Saved:', newsletter.email);
+    console.log('✅ 3. Newsletter Form Saved:', newsletter.email);
 
     console.log('🎉 ALL FORMS TESTED & SAVED SUCCESSFULLY TO MONGODB ATLAS!');
     process.exit(0);

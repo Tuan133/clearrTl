@@ -7,7 +7,6 @@ import {
   getAllContactsAdminAPI,
   resolveContactAPI,
   unresolveContactAPI,
-  getAllGiftCardsAdminAPI,
   getAllUsersAdminAPI,
   toggleUserActiveAPI
 } from '../services/api';
@@ -42,15 +41,7 @@ const IconContacts = () => (
   </svg>
 );
 
-const IconGiftCard = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 12 20 22 4 22 4 12"/>
-    <rect x="2" y="7" width="20" height="5"/>
-    <line x1="12" y1="22" x2="12" y2="7"/>
-    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-  </svg>
-);
+
 
 const IconUsers = () => (
   <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -83,13 +74,12 @@ const IconBox = () => (
   </svg>
 );
 
-const IconGiftBig = () => (
+const IconUsersBig = () => (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 12 20 22 4 22 4 12"/>
-    <rect x="2" y="7" width="20" height="5"/>
-    <line x1="12" y1="22" x2="12" y2="7"/>
-    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </svg>
 );
 
@@ -200,8 +190,7 @@ export default function AdminPage() {
   const [contactTotalPages, setContactTotalPages] = useState(1);
   const [selectedContact, setSelectedContact] = useState(null);
 
-  // Gift Cards State
-  const [giftCards, setGiftCards] = useState([]);
+
 
   // Users State
   const [users, setUsers] = useState([]);
@@ -260,20 +249,7 @@ export default function AdminPage() {
     }
   }, [contactPage, contactFilterStatus]);
 
-  // 4. Fetch Gift Cards
-  const fetchGiftCards = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getAllGiftCardsAdminAPI();
-      if (res.success) setGiftCards(res.data);
-    } catch (err) {
-      showToastMsg('Lỗi tải thẻ quà tặng: ' + err.message, 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // 5. Fetch Users
+  // 4. Fetch Users
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -290,9 +266,8 @@ export default function AdminPage() {
     if (activeTab === 'dashboard') fetchDashboard();
     if (activeTab === 'orders') fetchBookings();
     if (activeTab === 'contacts') fetchContacts();
-    if (activeTab === 'giftcards') fetchGiftCards();
     if (activeTab === 'users') fetchUsers();
-  }, [activeTab, fetchDashboard, fetchBookings, fetchContacts, fetchGiftCards, fetchUsers]);
+  }, [activeTab, fetchDashboard, fetchBookings, fetchContacts, fetchUsers]);
 
   // Handlers for Order Status Update
   const handleUpdateStatus = async (bookingId, newStatus) => {
@@ -394,13 +369,7 @@ export default function AdminPage() {
             )}
           </button>
 
-          <button
-            className={`admin-nav-item ${activeTab === 'giftcards' ? 'active' : ''}`}
-            onClick={() => setActiveTab('giftcards')}
-          >
-            <span className="nav-icon"><IconGiftCard /></span>
-            <span>Thẻ Quà Tặng</span>
-          </button>
+
 
           <button
             className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
@@ -425,7 +394,6 @@ export default function AdminPage() {
               {activeTab === 'dashboard' && 'Dashboard & Thống Kê Hệ Thống'}
               {activeTab === 'orders' && 'Quản Lý Đơn Giặt Ủi'}
               {activeTab === 'contacts' && 'Quản Lý Khách Hàng & Phản Hồi'}
-              {activeTab === 'giftcards' && 'Danh Sách Thẻ Quà Tặng Đã Bán'}
               {activeTab === 'users' && 'Danh Sách Tài Khoản Người Dùng'}
             </h2>
             <p>Trang quản trị vận hành TLaundry Realtime Portal</p>
@@ -436,7 +404,6 @@ export default function AdminPage() {
               if (activeTab === 'dashboard') fetchDashboard();
               if (activeTab === 'orders') fetchBookings();
               if (activeTab === 'contacts') fetchContacts();
-              if (activeTab === 'giftcards') fetchGiftCards();
               if (activeTab === 'users') fetchUsers();
             }}>
               <IconRefresh />
@@ -473,11 +440,11 @@ export default function AdminPage() {
               </div>
 
               <div className="kpi-card warning">
-                <div className="kpi-icon"><IconGiftBig /></div>
+                <div className="kpi-icon"><IconUsersBig /></div>
                 <div className="kpi-info">
-                  <span className="kpi-label">Thẻ Quà Tặng Đã Bán</span>
-                  <h3 className="kpi-value">{dashboardData?.giftCards?.totalSold ?? 0}</h3>
-                  <span className="kpi-sub">Hôm nay: {dashboardData?.giftCards?.soldToday ?? 0} thẻ</span>
+                  <span className="kpi-label">Khách Hàng Đăng Ký</span>
+                  <h3 className="kpi-value">{dashboardData?.users?.customers ?? 0}</h3>
+                  <span className="kpi-sub">Tổng tài khoản: {dashboardData?.users?.total ?? 0}</span>
                 </div>
               </div>
 
@@ -624,8 +591,8 @@ export default function AdminPage() {
                       <th>Mã Đơn</th>
                       <th>Khách Hàng</th>
                       <th>Số Điện Thoại</th>
-                      <th>Địa Chỉ / Quận</th>
-                      <th>Ngày Hẹn Lấy</th>
+                      <th>Địa Chỉ Giao Nhận</th>
+                      <th>Giao Nhận & Giặt Xả</th>
                       <th>Trạng Thái Hiện Tại</th>
                       <th>Chuyển Trạng Thái Sau</th>
                       <th>Thao Tác</th>
@@ -642,8 +609,27 @@ export default function AdminPage() {
                             <div className="sub-text">{item.email}</div>
                           </td>
                           <td>{item.phone}</td>
-                          <td>{item.address}, {item.suburb}</td>
-                          <td>{item.pickupDate} ({item.pickupTime || 'Cả ngày'})</td>
+                          <td>
+                            <div style={{ maxWidth: 220, fontSize: 13, lineHeight: 1.3 }}>
+                              {item.address} {item.suburb ? `, ${item.suburb}` : ''}
+                            </div>
+                          </td>
+                          <td>
+                            <div>
+                              {item.deliverySpeed === 'express' ? (
+                                <span style={{ display: 'inline-block', background: '#fef3c7', color: '#b45309', fontWeight: 700, fontSize: 11, padding: '2px 8px', borderRadius: 12, marginBottom: 4 }}>
+                                  ⚡ Hỏa tốc (+{item.expressFee || 30000}₫)
+                                </span>
+                              ) : (
+                                <span style={{ display: 'inline-block', background: '#ecfdf5', color: '#059669', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 12, marginBottom: 4 }}>
+                                  🚚 Tiêu chuẩn (24h)
+                                </span>
+                              )}
+                              <div style={{ fontSize: 12, color: 'var(--text-gray)' }}>
+                                🌿 {item.detergent || 'Organic'} • 🌸 {item.softener || 'Lavender'}
+                              </div>
+                            </div>
+                          </td>
                           <td>
                             <span
                               className="status-badge"
@@ -827,52 +813,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* TAB 4: GIFT CARDS */}
-        {activeTab === 'giftcards' && (
-          <div className="admin-content-section">
-            <div className="admin-panel">
-              <div className="admin-table-wrapper">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Mã Thẻ</th>
-                      <th>Mệnh Giá</th>
-                      <th>Người Gửi</th>
-                      <th>Người Nhận</th>
-                      <th>Email Nhận</th>
-                      <th>Ngày Giao Thẻ</th>
-                      <th>Trạng Thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {giftCards.map((card) => (
-                      <tr key={card._id}>
-                        <td><strong className="order-code-badge">{card.code}</strong></td>
-                        <td><strong style={{ color: 'var(--primary)' }}>${card.amount} AUD</strong></td>
-                        <td>{card.senderName} ({card.senderEmail})</td>
-                        <td>{card.recipientName}</td>
-                        <td>{card.recipientEmail}</td>
-                        <td>{card.deliveryDate}</td>
-                        <td>
-                          <span className={`status-badge ${card.status === 'ACTIVE' ? 'success' : 'secondary'}`}>
-                            {card.status === 'ACTIVE' ? <><IconCheck /> Đang hoạt động</> : card.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {giftCards.length === 0 && (
-                      <tr>
-                        <td colSpan="7" className="empty-cell">Chưa có thẻ quà tặng nào được bán</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: USERS */}
+        {/* TAB 4: USERS */}
         {activeTab === 'users' && (
           <div className="admin-content-section">
             <div className="admin-panel">
@@ -941,8 +882,17 @@ export default function AdminPage() {
                 <div><strong>Email:</strong> {selectedBooking.email}</div>
                 <div><strong>SĐT:</strong> {selectedBooking.phone}</div>
                 <div><strong>Dịch vụ:</strong> {selectedBooking.serviceType}</div>
-                <div><strong>Địa chỉ:</strong> {selectedBooking.address}, {selectedBooking.suburb}, {selectedBooking.state}</div>
-                <div><strong>Ngày lấy đồ:</strong> {selectedBooking.pickupDate} ({selectedBooking.pickupTime})</div>
+                <div><strong>Địa chỉ:</strong> {selectedBooking.address} {selectedBooking.suburb ? `, ${selectedBooking.suburb}` : ''} {selectedBooking.state ? `, ${selectedBooking.state}` : ''}</div>
+                <div><strong>Mẫu nước giặt:</strong> {selectedBooking.detergent || 'Organic Sinh Học'}</div>
+                <div><strong>Nước xả vải:</strong> {selectedBooking.softener || 'Hương Oải Hương (Lavender)'}</div>
+                <div>
+                  <strong>Giao nhận:</strong>{' '}
+                  {selectedBooking.deliverySpeed === 'express' ? (
+                    <span style={{ color: '#b45309', fontWeight: 700 }}>⚡ Hỏa tốc (+{selectedBooking.expressFee || 30000}₫)</span>
+                  ) : (
+                    <span style={{ color: '#059669', fontWeight: 600 }}>🚚 Tiêu chuẩn 24h</span>
+                  )}
+                </div>
                 <div><strong>Ghi chú:</strong> {selectedBooking.notes || 'Không có'}</div>
                 <div><strong>Trạng thái:</strong> {STATUS_MAP[selectedBooking.status]?.label}</div>
               </div>

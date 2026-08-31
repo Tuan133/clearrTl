@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import Contact from './models/Contact.js';
 import Booking from './models/Booking.js';
-import GiftCard from './models/GiftCard.js';
 import Newsletter from './models/Newsletter.js';
 import Service from './models/Service.js';
 import Pricing from './models/Pricing.js';
@@ -211,7 +210,6 @@ const runSeed = async () => {
     console.log('🧹 Clearing existing test data...');
     await Contact.deleteMany();
     await Booking.deleteMany();
-    await GiftCard.deleteMany();
     await Newsletter.deleteMany();
 
     console.log('🌱 Inserting sample test data into MongoDB Atlas...');

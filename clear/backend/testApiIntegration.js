@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import Booking from './models/Booking.js';
 import Contact from './models/Contact.js';
-import GiftCard from './models/GiftCard.js';
 import Newsletter from './models/Newsletter.js';
 import Service from './models/Service.js';
 import Pricing from './models/Pricing.js';
@@ -45,33 +44,19 @@ const runTest = async () => {
     });
     console.log('✅ 2. POST /api/contact OK: Contact ID =', contact._id);
 
-    // 3. Test POST /api/gift-cards
-    const giftCode = 'TL-' + Math.floor(100000 + Math.random() * 900000);
-    const giftCard = await GiftCard.create({
-      code: giftCode,
-      amount: 150,
-      recipientName: 'Lê Văn C',
-      recipientEmail: 'levanc@example.com',
-      senderName: 'Trần Thị B',
-      senderEmail: 'tranthib@example.com',
-      message: 'Món quà nho nhỏ tặng bạn!',
-      deliveryDate: '2026-08-15'
-    });
-    console.log('✅ 3. POST /api/gift-cards OK: Generated GiftCode =', giftCard.code);
-
-    // 4. Test POST /api/newsletter
+    // 3. Test POST /api/newsletter
     const testEmail = `newsletter_${Date.now()}@example.com`;
     const subscriber = await Newsletter.create({ email: testEmail });
-    console.log('✅ 4. POST /api/newsletter OK: Subscribed Email =', subscriber.email);
+    console.log('✅ 3. POST /api/newsletter OK: Subscribed Email =', subscriber.email);
 
-    // 5. Test GET /api/services & GET /api/pricing
+    // 4. Test GET /api/services & GET /api/pricing
     const services = await Service.find({ isActive: true });
-    console.log(`✅ 5a. GET /api/services OK: Found ${services.length} active services`);
+    console.log(`✅ 4a. GET /api/services OK: Found ${services.length} active services`);
 
     const pricing = await Pricing.findOne();
-    console.log(`✅ 5b. GET /api/pricing OK: Found ${pricing?.plans?.length || 0} pricing plans & ${pricing?.additionalItems?.length || 0} additional items`);
+    console.log(`✅ 4b. GET /api/pricing OK: Found ${pricing?.plans?.length || 0} pricing plans & ${pricing?.additionalItems?.length || 0} additional items`);
 
-    console.log('\n🎉 ALL 5 RESTFUL APIS VERIFIED SUCCESSFULLY WITH MONGODB ATLAS!\n');
+    console.log('\n🎉 ALL RESTFUL APIS VERIFIED SUCCESSFULLY WITH MONGODB ATLAS!\n');
     process.exit(0);
   } catch (err) {
     console.error('❌ Test failed:', err.message);

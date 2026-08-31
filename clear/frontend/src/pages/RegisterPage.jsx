@@ -117,14 +117,14 @@ const RegisterPage = () => {
     width: '100%',
     padding: '11px 14px 11px 40px',
     border: `1.5px solid ${
-      focusField === name ? '#1a56db'
+      focusField === name ? '#069494'
       : error && !form[name] ? '#ef4444'
-      : '#e5e7eb'
+      : '#b3e0e0'
     }`,
     borderRadius: 10,
     fontSize: 14,
-    color: '#1e293b',
-    background: focusField === name ? '#f8faff' : '#ffffff',
+    color: '#073a3a',
+    background: focusField === name ? '#f0fbfb' : '#ffffff',
     outline: 'none',
     transition: 'all 0.2s ease',
     boxSizing: 'border-box',
@@ -143,7 +143,7 @@ const RegisterPage = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #0f172a 100%)',
+      background: 'linear-gradient(135deg, #e0f5f5 0%, #f0fbfb 50%, #c8eeee 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -154,12 +154,12 @@ const RegisterPage = () => {
       {/* Background orbs */}
       <div style={{
         position: 'absolute', top: -120, left: -120, width: 400, height: 400,
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(26,86,219,0.25) 0%, transparent 70%)',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,148,148,0.2) 0%, transparent 70%)',
         pointerEvents: 'none',
       }} />
       <div style={{
         position: 'absolute', bottom: -100, right: -100, width: 350, height: 350,
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.2) 0%, transparent 70%)',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(8,178,178,0.15) 0%, transparent 70%)',
         pointerEvents: 'none',
       }} />
 
@@ -167,9 +167,11 @@ const RegisterPage = () => {
       <div style={{
         width: '100%',
         maxWidth: 520,
-        background: 'rgba(255,255,255,0.97)',
-        borderRadius: 20,
-        boxShadow: '0 25px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)',
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: 24,
+        border: '1px solid rgba(6,148,148,0.2)',
+        boxShadow: '0 20px 60px rgba(6,148,148,0.18), 0 4px 20px rgba(0,0,0,0.06)',
         overflow: 'hidden',
         position: 'relative',
         zIndex: 1,
@@ -178,7 +180,7 @@ const RegisterPage = () => {
         {/* Top gradient strip */}
         <div style={{
           height: 5,
-          background: 'linear-gradient(90deg, #1a56db, #0ea5e9, #7c3aed)',
+          background: 'linear-gradient(90deg, #0ab8b8, #069494, #046e6e)',
         }} />
 
         <div style={{ padding: '32px 36px 28px' }}>
@@ -192,23 +194,23 @@ const RegisterPage = () => {
             }}>
               <div style={{
                 width: 44, height: 44,
-                background: 'linear-gradient(135deg, #1a56db, #0ea5e9)',
+                background: 'linear-gradient(135deg, #069494, #046e6e)',
                 borderRadius: 12,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(26,86,219,0.35)',
+                boxShadow: '0 4px 14px rgba(6,148,148,0.35)',
               }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                   <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
               </div>
-              <span style={{ fontSize: 20, fontWeight: 800, color: '#1e293b', letterSpacing: '-0.5px' }}>TLaundry</span>
+              <span style={{ fontSize: 20, fontWeight: 800, color: '#073a3a', letterSpacing: '-0.5px' }}>TLaundry</span>
             </Link>
 
-            <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
+            <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 800, color: '#073a3a', letterSpacing: '-0.5px' }}>
               Tạo tài khoản mới
             </h1>
-            <p style={{ margin: 0, fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: 14, color: '#4a7272', lineHeight: 1.5 }}>
               Đăng ký để theo dõi đơn giặt và nhận ưu đãi độc quyền
             </p>
           </div>
@@ -216,15 +218,15 @@ const RegisterPage = () => {
           {/* Role info badge */}
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 10,
-            background: 'linear-gradient(135deg, #eff6ff, #f0fdf4)',
-            border: '1px solid #bfdbfe',
+            background: 'linear-gradient(135deg, #e0f5f5, #f0fbfb)',
+            border: '1px solid #b3e0e0',
             borderRadius: 10,
             padding: '12px 14px',
             marginBottom: 22,
           }}>
             <div style={{
               width: 32, height: 32, minWidth: 32,
-              background: 'linear-gradient(135deg, #1a56db, #0ea5e9)',
+              background: 'linear-gradient(135deg, #069494, #046e6e)',
               borderRadius: 8,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
@@ -233,10 +235,10 @@ const RegisterPage = () => {
               </svg>
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1e40af' }}>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#046e6e' }}>
                 Tài khoản Khách hàng
               </p>
-              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#4a7272', lineHeight: 1.5 }}>
                 Tài khoản đăng ký sẽ là <strong>Khách hàng</strong>. Tài khoản Admin/Staff được cấp bởi quản lý hệ thống.
               </p>
             </div>
@@ -276,7 +278,7 @@ const RegisterPage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               {/* Name */}
               <div>
-                <label htmlFor="reg-name" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                <label htmlFor="reg-name" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#073a3a', marginBottom: 6 }}>
                   Họ và tên <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -301,7 +303,7 @@ const RegisterPage = () => {
 
               {/* Phone */}
               <div>
-                <label htmlFor="reg-phone" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                <label htmlFor="reg-phone" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#073a3a', marginBottom: 6 }}>
                   Số điện thoại
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -326,7 +328,7 @@ const RegisterPage = () => {
 
             {/* Email */}
             <div style={{ marginBottom: 14 }}>
-              <label htmlFor="reg-email" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+              <label htmlFor="reg-email" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#073a3a', marginBottom: 6 }}>
                 Email <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <div style={{ position: 'relative' }}>
@@ -351,7 +353,7 @@ const RegisterPage = () => {
 
             {/* Password */}
             <div style={{ marginBottom: 14 }}>
-              <label htmlFor="reg-password" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+              <label htmlFor="reg-password" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#073a3a', marginBottom: 6 }}>
                 Mật khẩu <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <div style={{ position: 'relative' }}>
@@ -389,7 +391,7 @@ const RegisterPage = () => {
 
             {/* Confirm Password */}
             <div style={{ marginBottom: 18 }}>
-              <label htmlFor="reg-confirm" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+              <label htmlFor="reg-confirm" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#073a3a', marginBottom: 6 }}>
                 Xác nhận mật khẩu <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <div style={{ position: 'relative' }}>
@@ -412,7 +414,7 @@ const RegisterPage = () => {
                       ? '#ef4444'
                       : form.confirmPassword && form.password === form.confirmPassword
                       ? '#22c55e'
-                      : focusField === 'confirmPassword' ? '#1a56db' : '#e5e7eb',
+                      : focusField === 'confirmPassword' ? '#069494' : '#b3e0e0',
                   }}
                   autoComplete="new-password"
                   required
@@ -461,9 +463,9 @@ const RegisterPage = () => {
                 />
                 <div style={{
                   width: 18, height: 18,
-                  border: `2px solid ${agreed ? '#1a56db' : '#d1d5db'}`,
+                  border: `2px solid ${agreed ? '#069494' : '#b3e0e0'}`,
                   borderRadius: 5,
-                  background: agreed ? '#1a56db' : '#fff',
+                  background: agreed ? '#069494' : '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s ease',
                 }}>
@@ -474,11 +476,11 @@ const RegisterPage = () => {
                   )}
                 </div>
               </div>
-              <span style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.5 }}>
+              <span style={{ fontSize: 13, color: '#1a4444', lineHeight: 1.5 }}>
                 Tôi đồng ý với{' '}
-                <Link to="/terms" style={{ color: '#1a56db', fontWeight: 600, textDecoration: 'none' }}>Điều khoản Dịch vụ</Link>
+                <Link to="/terms" style={{ color: '#069494', fontWeight: 600, textDecoration: 'none' }}>Điều khoản Dịch vụ</Link>
                 {' '}và{' '}
-                <Link to="/privacy" style={{ color: '#1a56db', fontWeight: 600, textDecoration: 'none' }}>Chính sách Bảo mật</Link>
+                <Link to="/privacy" style={{ color: '#069494', fontWeight: 600, textDecoration: 'none' }}>Chính sách Bảo mật</Link>
               </span>
             </label>
 
@@ -491,8 +493,8 @@ const RegisterPage = () => {
                 width: '100%',
                 padding: '13px 24px',
                 background: loading || success
-                  ? '#93c5fd'
-                  : 'linear-gradient(135deg, #1a56db 0%, #0ea5e9 100%)',
+                  ? 'rgba(6,148,148,0.5)'
+                  : 'linear-gradient(135deg, #069494 0%, #046e6e 100%)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: 11,
@@ -504,18 +506,18 @@ const RegisterPage = () => {
                 justifyContent: 'center',
                 gap: 8,
                 transition: 'all 0.25s ease',
-                boxShadow: loading || success ? 'none' : '0 4px 15px rgba(26,86,219,0.35)',
+                boxShadow: loading || success ? 'none' : '0 4px 15px rgba(6,148,148,0.35)',
                 letterSpacing: '0.3px',
               }}
               onMouseEnter={e => {
                 if (!loading && !success) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,86,219,0.45)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(6,148,148,0.45)';
                 }
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = loading || success ? 'none' : '0 4px 15px rgba(26,86,219,0.35)';
+                e.currentTarget.style.boxShadow = loading || success ? 'none' : '0 4px 15px rgba(6,148,148,0.35)';
               }}
             >
               {loading ? (
@@ -537,18 +539,18 @@ const RegisterPage = () => {
 
         {/* Footer */}
         <div style={{
-          background: '#f8fafc',
-          borderTop: '1px solid #f1f5f9',
+          background: '#f0fbfb',
+          borderTop: '1px solid #b3e0e0',
           padding: '18px 36px',
           textAlign: 'center',
         }}>
-          <p style={{ margin: '0 0 6px', fontSize: 13.5, color: '#64748b' }}>
+          <p style={{ margin: '0 0 6px', fontSize: 13.5, color: '#4a7272' }}>
             Đã có tài khoản?{' '}
-            <Link to="/login" style={{ color: '#1a56db', fontWeight: 700, textDecoration: 'none' }}>
+            <Link to="/login" style={{ color: '#069494', fontWeight: 700, textDecoration: 'none' }}>
               Đăng nhập ngay
             </Link>
           </p>
-          <Link to="/" style={{ fontSize: 12.5, color: '#94a3b8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Link to="/" style={{ fontSize: 12.5, color: '#4a7272', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
             Quay về trang chủ
           </Link>

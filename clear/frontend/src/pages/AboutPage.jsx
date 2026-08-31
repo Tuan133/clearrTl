@@ -137,6 +137,13 @@ const AboutPage = () => {
 
   const values = lang === 'vi' ? valuesVi : valuesEn;
 
+  const serviceImages = [
+    { name: t.header.domestic, img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80' },
+    { name: t.header.commercial, img: 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=300&q=80' },
+    { name: t.header.ironing, img: 'https://images.unsplash.com/photo-1616587226960-4a03badbe8bf?w=300&q=80' },
+    { name: t.header.dryCleaning, img: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=300&q=80' },
+  ];
+
   return (
     <main>
       <div className="page-hero">
@@ -145,6 +152,76 @@ const AboutPage = () => {
           <p>{lang === 'vi' ? 'Dịch vụ giặt ủi di động giao nhận tận nơi uy tín hàng đầu tại Sài Gòn, thuộc tập đoàn Jim\'s Group.' : 'Sài Gòn\'s most trusted mobile laundry pick-up and delivery service, backed by the Jim\'s Group.'}</p>
         </div>
       </div>
+
+      {/* ===== WHO WE ARE ===== */}
+      <section className="who-we-are">
+        <div className="container">
+          <div className="who-grid">
+            <div className="who-content">
+              <span className="badge">{lang === 'vi' ? 'Về TLaundry' : 'About TLaundry'}</span>
+              <h2>
+                {lang === 'vi'
+                  ? <><em>Dịch Vụ Giặt Ủi</em> Di Động Nhận &amp; Giao Tận Nơi Được Tin Tưởng Nhất tại Sài Gòn</>
+                  : <><em>Mobile Laundry</em> Pick-up &amp; Delivery — Sài Gòn's Most Trusted</>}
+              </h2>
+              <p>{t.whoWeAre.desc1}</p>
+              <p>{t.whoWeAre.desc2}</p>
+              <div className="who-features">
+                {t.whoWeAre.features.map(f => (
+                  <div key={f} className="who-feature">
+                    <div className="who-feature-icon">✓</div>
+                    {f}
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-primary" onClick={() => navigate('/booking')}>
+                {t.whoWeAre.btnLearn}
+              </button>
+            </div>
+            <div className="who-video">
+              <img
+                src="https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=700&q=80"
+                alt="TLaundry team"
+              />
+              <div className="play-btn">
+                <div className="play-circle">
+                  <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== SERVICES ===== */}
+      <section className="services-section">
+        <div className="container">
+          <div className="services-header">
+            <h2>{t.servicesSection.title}</h2>
+            <p>{t.servicesSection.desc}</p>
+          </div>
+          <span className="badge">{t.servicesSection.badge}</span>
+
+          <div className="services-grid">
+            {serviceImages.map((svc, i) => (
+              <div
+                key={svc.name}
+                className={`service-card ${i === 0 ? 'active' : ''}`}
+                onClick={() => navigate('/services')}
+              >
+                <div className="service-img-wrap">
+                  <img src={svc.img} alt={svc.name} />
+                </div>
+                <div className="service-card-body">
+                  <h3>{svc.name}</h3>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* About main */}
       <section className="about-section">
