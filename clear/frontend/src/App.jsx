@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OrderHistoryPage from './pages/OrderHistoryPage';
 import AdminPage from './pages/AdminPage';
+import TrackOrderPage from './pages/TrackOrderPage';
 
 
 function ScrollToTop() {
@@ -165,6 +166,7 @@ function AppLayout() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/track-order" element={<TrackOrderPage />} />
 
         {/* ── Auth Routes ── */}
         <Route path="/login" element={<LoginPage />} />

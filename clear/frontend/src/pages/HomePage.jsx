@@ -115,12 +115,15 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { lang, t } = useLanguage();
   const [activeVideo, setActiveVideo] = useState(null);
+  const [videoReviewModal, setVideoReviewModal] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ name: '', service: '', rating: 5, file: null, dragging: false });
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setActiveVideo(null);
+      if (e.key === 'Escape') { setActiveVideo(null); setVideoReviewModal(false); }
     };
-    if (activeVideo) {
+    if (activeVideo || videoReviewModal) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
     } else {
@@ -130,15 +133,15 @@ const HomePage = () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeVideo]);
+  }, [activeVideo, videoReviewModal]);
 
   const newsItems = lang === 'vi' ? newsItemsVi : newsItemsEn;
 
 
 
   return (
+    <>
     <main>
-      {/* ===== HERO ===== */}
       <section className="hero">
         <div className="container">
           <div className="hero-grid">
@@ -274,7 +277,7 @@ const HomePage = () => {
                   src={[
                     'https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=500&q=80',
                     'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=500&q=80',
-                    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&q=80',
+                    'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=500&q=80',
                   ][idx]}
                   alt={card.title}
                 />
@@ -282,9 +285,22 @@ const HomePage = () => {
                   <div className="promo-num">{card.num}</div>
                   <h3>{card.title}</h3>
                   <p>{card.desc}</p>
-                  <button className="btn btn-primary" onClick={() => navigate(card.href)}>
-                    {card.btn}
-                  </button>
+                  {card.href === '#video-review' ? (
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => { setReviewSubmitted(false); setReviewForm({ name: '', service: '', rating: 5, file: null, dragging: false }); setVideoReviewModal(true); }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <polygon points="23 7 16 12 23 17 23 7" />
+                        <rect x="1" y="5" width="15" height="14" rx="2" />
+                      </svg>
+                      {card.btn}
+                    </button>
+                  ) : (
+                    <button className="btn btn-primary" onClick={() => navigate(card.href)}>
+                      {card.btn}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -519,6 +535,253 @@ const HomePage = () => {
         </div>
       </section>
     </main>
+
+      {/* ===== VIDEO REVIEW MODAL ===== */}
+      {videoReviewModal && (
+        <div
+          className="video-lightbox-backdrop"
+          onClick={() => setVideoReviewModal(false)}
+          style={{ zIndex: 10000 }}
+        >
+          <div
+            className="video-lightbox-dialog"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: 520, borderRadius: 20, padding: 0, overflow: 'hidden' }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, var(--primary) 0%, #0891b2 100%)',
+              padding: '24px 28px 20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7" />
+                    <rect x="1" y="5" width="15" height="14" rx="2" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: 17, lineHeight: 1.2 }}>
+                    {lang === 'vi' ? 'Gửi Video Đánh Giá' : 'Submit a Video Review'}
+                  </div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>
+                    {lang === 'vi' ? 'Chia sẻ trải nghiệm của bạn' : 'Share your experience with us'}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setVideoReviewModal(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8,
+                  width: 32, height: 32, cursor: 'pointer', color: 'white', fontSize: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+                aria-label="Đóng"
+              >✕</button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ background: '#0f172a', padding: '24px 28px 28px' }}>
+              {reviewSubmitted ? (
+                /* ── Success State ── */
+                <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                  <div style={{
+                    width: 72, height: 72, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--primary), #0891b2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 20px'
+                  }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <h3 style={{ color: 'white', fontSize: 20, fontWeight: 700, marginBottom: 10 }}>
+                    {lang === 'vi' ? '🎉 Cảm ơn bạn!' : '🎉 Thank You!'}
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14.5, lineHeight: 1.7, marginBottom: 24 }}>
+                    {lang === 'vi'
+                      ? 'Video đánh giá của bạn đã được gửi thành công. Đội ngũ TLaundry sẽ xem xét và liên hệ với bạn trong vòng 24 giờ. Bạn sẽ nhận được phần thưởng đặc biệt!'
+                      : 'Your video review has been submitted successfully. Our team will review it and contact you within 24 hours. You will receive a special reward!'}
+                  </p>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setVideoReviewModal(false)}
+                    style={{ margin: '0 auto' }}
+                  >
+                    {lang === 'vi' ? 'Đóng' : 'Close'}
+                  </button>
+                </div>
+              ) : (
+                /* ── Upload Form ── */
+                <>
+                  {/* Name */}
+                  <div style={{ marginBottom: 18 }}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                      {lang === 'vi' ? 'Họ & Tên *' : 'Full Name *'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={lang === 'vi' ? 'Nguyễn Văn A...' : 'John Smith...'}
+                      value={reviewForm.name}
+                      onChange={e => setReviewForm(f => ({ ...f, name: e.target.value }))}
+                      style={{
+                        width: '100%', padding: '10px 14px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
+                        color: 'white', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  {/* Service */}
+                  <div style={{ marginBottom: 18 }}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                      {lang === 'vi' ? 'Dịch Vụ Đã Dùng *' : 'Service Used *'}
+                    </label>
+                    <select
+                      value={reviewForm.service}
+                      onChange={e => setReviewForm(f => ({ ...f, service: e.target.value }))}
+                      style={{
+                        width: '100%', padding: '10px 14px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
+                        color: reviewForm.service ? 'white' : 'rgba(255,255,255,0.4)', fontSize: 14, outline: 'none',
+                        boxSizing: 'border-box', cursor: 'pointer'
+                      }}
+                    >
+                      <option value="" style={{ color: '#333' }}>{lang === 'vi' ? '-- Chọn dịch vụ --' : '-- Select service --'}</option>
+                      <option value="wash-fold" style={{ color: '#333' }}>{lang === 'vi' ? 'Giặt Sấy & Gấp Gọn' : 'Wash, Dry & Fold'}</option>
+                      <option value="dry-clean" style={{ color: '#333' }}>{lang === 'vi' ? 'Giặt Khô / Giặt Hấp' : 'Dry Cleaning'}</option>
+                      <option value="ironing" style={{ color: '#333' }}>{lang === 'vi' ? 'Là/Ủi Quần Áo' : 'Ironing Service'}</option>
+                      <option value="commercial" style={{ color: '#333' }}>{lang === 'vi' ? 'Giặt Ủi Thương Mại' : 'Commercial Laundry'}</option>
+                    </select>
+                  </div>
+
+                  {/* Star Rating */}
+                  <div style={{ marginBottom: 18 }}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                      {lang === 'vi' ? 'Xếp Hạng' : 'Your Rating'}
+                    </label>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {[1,2,3,4,5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewForm(f => ({ ...f, rating: star }))}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            fontSize: 28, lineHeight: 1, padding: 2,
+                            color: star <= reviewForm.rating ? '#f59e0b' : 'rgba(255,255,255,0.2)',
+                            transition: 'color 0.15s, transform 0.15s',
+                            transform: star <= reviewForm.rating ? 'scale(1.1)' : 'scale(1)'
+                          }}
+                        >★</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Drop Zone */}
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ display: 'block', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                      {lang === 'vi' ? 'Tải Video Lên *' : 'Upload Video *'}
+                    </label>
+                    <label
+                      htmlFor="video-upload-input"
+                      onDragOver={e => { e.preventDefault(); setReviewForm(f => ({ ...f, dragging: true })); }}
+                      onDragLeave={() => setReviewForm(f => ({ ...f, dragging: false }))}
+                      onDrop={e => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file && file.type.startsWith('video/')) setReviewForm(f => ({ ...f, file, dragging: false }));
+                      }}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        border: `2px dashed ${reviewForm.dragging ? 'var(--primary)' : reviewForm.file ? '#10b981' : 'rgba(255,255,255,0.2)'}`,
+                        borderRadius: 12, padding: '28px 20px', cursor: 'pointer', textAlign: 'center',
+                        background: reviewForm.dragging ? 'rgba(10,184,184,0.08)' : reviewForm.file ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {reviewForm.file ? (
+                        <>
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 8 }}>
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <div style={{ color: '#10b981', fontWeight: 600, fontSize: 14 }}>{reviewForm.file.name}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 4 }}>
+                            {(reviewForm.file.size / 1024 / 1024).toFixed(1)} MB
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10 }}>
+                            <polyline points="16 16 12 12 8 16" />
+                            <line x1="12" y1="12" x2="12" y2="21" />
+                            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                          </svg>
+                          <div style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
+                            {lang === 'vi' ? 'Kéo thả video vào đây' : 'Drag & drop your video here'}
+                          </div>
+                          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+                            {lang === 'vi' ? 'hoặc click để chọn file • MP4, MOV, AVI • Tối đa 100MB' : 'or click to browse • MP4, MOV, AVI • Max 100MB'}
+                          </div>
+                        </>
+                      )}
+                      <input
+                        id="video-upload-input"
+                        type="file"
+                        accept="video/*"
+                        style={{ display: 'none' }}
+                        onChange={e => {
+                          const file = e.target.files[0];
+                          if (file) setReviewForm(f => ({ ...f, file }));
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Reward Banner */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))',
+                    border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10,
+                    padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20
+                  }}>
+                    <span style={{ fontSize: 20 }}>🎁</span>
+                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, lineHeight: 1.5 }}>
+                      {lang === 'vi'
+                        ? 'Video được duyệt sẽ nhận ngay voucher giảm giá 20% cho lần giặt tiếp theo!'
+                        : 'Approved videos receive a 20% discount voucher for your next wash!'}
+                    </span>
+                  </div>
+
+                  {/* Submit */}
+                  <button
+                    className="btn btn-primary"
+                    style={{ width: '100%', justifyContent: 'center', padding: '13px 0', fontSize: 15, fontWeight: 700 }}
+                    onClick={() => {
+                      if (!reviewForm.name.trim() || !reviewForm.service || !reviewForm.file) {
+                        alert(lang === 'vi' ? 'Vui lòng điền đầy đủ thông tin và chọn video!' : 'Please fill all fields and select a video!');
+                        return;
+                      }
+                      setReviewSubmitted(true);
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13" />
+                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                    {lang === 'vi' ? 'Gửi Video Đánh Giá' : 'Submit Video Review'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

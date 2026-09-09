@@ -509,8 +509,8 @@ app.post('/api/bookings', validate(bookingSchema), async (req, res, next) => {
 
     console.log(`✅ New Booking Saved: OrderCode [${newBooking.orderCode}] UserID [${userId || 'guest'}]`);
 
-    // 📧 1 email duy nhất: To=khách xác nhận đơn, BCC=admin tự động — fire-and-forget
-    sendBookingConfirmation(newBooking, null)
+    // 📧 Tự động gửi Gmail báo giá tới email khách hàng, BCC admin
+    sendBookingConfirmation(newBooking)
       .catch(err => console.error('❌ [Email] Unexpected error in booking email:', err.message));
 
     res.status(201).json({
@@ -572,16 +572,41 @@ app.get('/api/bookings/my-orders', protect, async (req, res, next) => {
  */
 app.get('/api/bookings/:orderCode/track', async (req, res, next) => {
   try {
-    const booking = await Booking.findOne({ orderCode: req.params.orderCode });
+    const rawCode = (req.params.orderCode || '').trim();
+    const booking = await Booking.findOne({
+      orderCode: { $regex: new RegExp(`^${rawCode}$`, 'i') }
+    });
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng với mã này!' });
     }
 
-    // Ẩn thông tin nhạy cảm khi không có auth
-    const { _id, orderCode, serviceType, status, pickupDate, createdAt, firstName, lastName } = booking;
+    // Trả về thông tin trạng thái và dịch vụ cần thiết (bảo mật không lộ email/sđt đầy đủ khi tra cứu công khai)
+    const {
+      _id, orderCode, serviceType, status, pickupDate, pickupTime,
+      createdAt, firstName, lastName, deliverySpeed, detergent, softener,
+      address, suburb, state, notes
+    } = booking;
+
+    // Ẩn bớt số nhà/địa chỉ cụ thể để bảo mật riêng tư khi tra cứu public
+    const safeAddress = suburb ? `${suburb}, ${state || ''}`.trim() : (address ? '*** (Đã xác nhận địa chỉ)' : '—');
+
     res.json({
       success: true,
-      data: { _id, orderCode, serviceType, status, pickupDate, createdAt, firstName, lastName }
+      data: {
+        _id,
+        orderCode,
+        serviceType,
+        status,
+        pickupDate,
+        pickupTime,
+        createdAt,
+        customerName: `${firstName || ''} ${lastName || ''}`.trim() || 'Khách hàng',
+        deliverySpeed,
+        detergent,
+        softener,
+        area: safeAddress,
+        notes: notes || '',
+      }
     });
   } catch (error) {
     next(error);

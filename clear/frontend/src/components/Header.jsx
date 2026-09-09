@@ -35,17 +35,9 @@ const GlobeIcon = () => (
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [servicesOpen, setServicesOpen] = useState(false);
   const navigate = useNavigate();
   const { lang, toggleLanguage, t } = useLanguage();
   const { user, isAuthenticated, isAdminOrStaff, logout } = useAuth();
-
-  const serviceLinks = [
-    { label: t.header.domestic, href: '/services' },
-    { label: t.header.commercial, href: '/services' },
-    { label: t.header.ironing, href: '/services' },
-    { label: t.header.dryCleaning, href: '/services' },
-  ];
 
   return (
     <>
@@ -66,37 +58,19 @@ const Header = () => {
                 {t.header.aboutUs}
               </NavLink>
             </li>
-            <li
-              className={`nav-item ${servicesOpen ? 'open' : ''}`}
-              onMouseEnter={() => setServicesOpen(true)}
-              onMouseLeave={() => setServicesOpen(false)}
-            >
-              <NavLink
-                to="/services"
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                onClick={() => setServicesOpen(false)}
-              >
-                <span>{t.header.services}</span>
-                <ChevronDown />
+            <li>
+              <NavLink to="/services" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                {t.header.services}
               </NavLink>
-              <div className={`dropdown ${servicesOpen ? 'open' : ''}`}>
-                {serviceLinks.map(l => (
-                  <Link
-                    key={l.label}
-                    to={l.href}
-                    onClick={() => {
-                      setServicesOpen(false);
-                      setMobileOpen(false);
-                    }}
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
             </li>
             <li>
               <NavLink to="/pricing" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 {t.header.pricing}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/track-order" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                {t.header.trackOrder}
               </NavLink>
             </li>
             <li>
@@ -144,10 +118,16 @@ const Header = () => {
                         </div>
                         <div className="user-dropdown-body">
                           {!isAdminOrStaff && (
-                            <Link to="/my-orders" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /></svg>
-                              Lịch sử đơn hàng
-                            </Link>
+                            <>
+                              <Link to="/my-orders" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /></svg>
+                                Lịch sử đơn hàng
+                              </Link>
+                              <Link to="/track-order" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                Tra cứu tiến độ
+                              </Link>
+                            </>
                           )}
                           {isAdminOrStaff && (
                             <Link to="/admin" className="user-dropdown-item" onClick={() => setUserMenuOpen(false)}>
@@ -214,6 +194,7 @@ const Header = () => {
             { label: t.header.aboutUs, href: '/about' },
             { label: t.header.services, href: '/services' },
             { label: t.header.pricing, href: '/pricing' },
+            { label: t.header.trackOrder, href: '/track-order' },
             { label: t.header.contact, href: '/contact' },
           ].map(l => (
             <Link

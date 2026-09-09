@@ -21,6 +21,7 @@ export const translations = {
       hcp: 'Dịch Vụ Hỗ Trợ HCP',
       careFacilities: 'Giặt Ủi Bệnh Viện & Cơ Sở Chăm Sóc',
       pricing: 'Bảng Giá',
+      trackOrder: 'Tra Cứu Đơn',
       contact: 'Liên Hệ',
       requestQuote: 'Yêu Cầu Báo Giá Miễn Phí',
       phone: '131 546',
@@ -74,6 +75,13 @@ export const translations = {
         desc: 'Nếu bạn có bất kỳ câu hỏi nào khác về dịch vụ giặt ủi giao nhận tận nơi của chúng tôi, đừng ngần ngại liên hệ ngay hôm nay!',
         btn: 'Liên Hệ Ngay',
         href: '/contact',
+      },
+      {
+        num: '03.',
+        title: 'Gửi Video Đánh Giá',
+        desc: 'Bạn đã trải nghiệm dịch vụ của TLaundry? Hãy chia sẻ cảm nhận qua video ngắn! Đánh giá của bạn giúp hàng ngàn khách hàng khác đưa ra lựa chọn đúng đắn.',
+        btn: 'Gửi Video Ngay',
+        href: '#video-review',
       },
     ],
     servicesSection: {
@@ -273,6 +281,7 @@ export const translations = {
       hcp: 'HCP Support Services',
       careFacilities: 'Care Facilities Laundry',
       pricing: 'Pricing List',
+      trackOrder: 'Track Order',
       contact: 'Contact Us',
       requestQuote: 'Request A Free Quote',
       phone: '131 546',
@@ -326,6 +335,13 @@ export const translations = {
         desc: "If you have any other questions about our laundry pick-up & delivery services, feel free to contact us today! We've got your back.",
         btn: 'Contact Us',
         href: '/contact',
+      },
+      {
+        num: '03.',
+        title: 'Submit a Video Review',
+        desc: 'Loved your TLaundry experience? Share a short video review with us! Your feedback helps thousands of customers make the right choice and earns you exclusive rewards.',
+        btn: 'Submit Video Now',
+        href: '#video-review',
       },
     ],
     servicesSection: {

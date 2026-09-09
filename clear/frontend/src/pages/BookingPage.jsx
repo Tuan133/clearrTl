@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { submitBookingAPI } from '../services/api';
 
 const BookingPage = () => {
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState('');
   const [done, setDone] = useState(false);
@@ -20,10 +22,12 @@ const BookingPage = () => {
     address: '',
     detergent: '',
     softener: '',
-    deliverySpeed: 'standard', // 'standard' | 'express'
+    deliverySpeed: 'standard',
     expressFee: 0,
     notes: '',
   });
+  // Track which fields were auto-filled from account
+  const [autoFilledFields, setAutoFilledFields] = useState([]);
 
   const STEPS = [t.bookingPage.step1, t.bookingPage.step2, t.bookingPage.step3];
 
@@ -205,7 +209,36 @@ const BookingPage = () => {
     },
   ];
 
-  const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  // ── Auto-fill khi user đã đăng nhập và chuyển sang step 1 ──
+  useEffect(() => {
+    if (step === 1 && isAuthenticated && user) {
+      const nameParts = (user.name || '').trim().split(' ');
+      const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : nameParts[0] || '';
+      const lastName  = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+      const filled = [];
+
+      setForm(f => {
+        const updated = { ...f };
+        if (!f.firstName && firstName) { updated.firstName = firstName; filled.push('firstName'); }
+        if (!f.lastName  && lastName)  { updated.lastName  = lastName;  filled.push('lastName');  }
+        if (!f.email     && user.email) { updated.email    = user.email; filled.push('email');     }
+        if (!f.phone     && user.phone) { updated.phone    = user.phone; filled.push('phone');     }
+        return updated;
+      });
+
+      if (filled.length > 0) setAutoFilledFields(filled);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, isAuthenticated, user]);
+
+  const handle = (e) => {
+    const { name, value } = e.target;
+    // Khi user tự chỉnh sửa field đã auto-fill → xóa khỏi danh sách
+    if (autoFilledFields.includes(name)) {
+      setAutoFilledFields(prev => prev.filter(f => f !== name));
+    }
+    setForm(f => ({ ...f, [name]: value }));
+  };
 
   // Toggle: click lại item đã chọn → bỏ chọn (tùy chọn, không bắt buộc)
   const setDetergent = (name) => setForm(f => ({ ...f, detergent: f.detergent === name ? '' : name }));
@@ -270,6 +303,30 @@ const BookingPage = () => {
               </div>
             )}
             <p>{t.bookingPage.successDesc}</p>
+            {form.email && (
+              <div style={{
+                background: 'rgba(13, 148, 136, 0.08)',
+                border: '1px solid rgba(13, 148, 136, 0.25)',
+                color: '#065f57',
+                padding: '12px 18px',
+                borderRadius: '10px',
+                margin: '16px auto 20px',
+                maxWidth: 480,
+                fontSize: 14,
+                lineHeight: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                textAlign: 'left'
+              }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>📧</span>
+                <span>
+                  {lang === 'vi' 
+                    ? <>Hệ thống đã tự động gửi email xác nhận báo giá chi tiết tới <strong>{form.email}</strong>. Quý khách vui lòng kiểm tra hộp thư đến (hoặc hòm thư Spam/Quảng cáo).</>
+                    : <>A quote confirmation email has been sent to <strong>{form.email}</strong>. Please check your inbox or spam folder.</>}
+                </span>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <button className="btn btn-primary" onClick={() => { setDone(false); setStep(0); setSelected(''); }}>
                 {t.bookingPage.btnSubmitAnother}
@@ -329,26 +386,83 @@ const BookingPage = () => {
                 <h2>{t.bookingPage.detailsTitle}</h2>
                 <p className="subtitle">{t.bookingPage.detailsSubtitle}</p>
 
+                {/* Auto-fill banner */}
+                {isAuthenticated && autoFilledFields.length > 0 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10,
+                    background: 'linear-gradient(135deg, rgba(10,184,184,0.1), rgba(10,184,184,0.05))',
+                    border: '1px solid rgba(10,184,184,0.3)', borderRadius: 12,
+                    padding: '12px 16px', marginBottom: 24
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--primary)', marginBottom: 2 }}>
+                        {lang === 'vi' ? '✓ Đã tự động điền từ tài khoản của bạn' : '✓ Auto-filled from your account'}
+                      </div>
+                      <div style={{ fontSize: 12.5, color: 'var(--text-gray)', lineHeight: 1.5 }}>
+                        {lang === 'vi'
+                          ? 'Thông tin cá nhân đã được điền sẵn. Vui lòng kiểm tra lại trước khi tiếp tục.'
+                          : 'Your personal details have been pre-filled. Please review them before continuing.'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Personal Information */}
                 <div className="form-row">
                   <div className="form-group">
-                    <label>{t.bookingPage.firstName} <span className="required-star">*</span></label>
-                    <input name="firstName" value={form.firstName} onChange={handle} required placeholder="John" />
+                    <label>
+                      {t.bookingPage.firstName} <span className="required-star">*</span>
+                      {autoFilledFields.includes('firstName') && (
+                        <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--primary)', fontWeight: 600, verticalAlign: 'middle' }}>⚡ Tự động điền</span>
+                      )}
+                    </label>
+                    <input
+                      name="firstName" value={form.firstName} onChange={handle} required placeholder="John"
+                      style={autoFilledFields.includes('firstName') ? { borderColor: 'var(--primary)', background: 'rgba(10,184,184,0.04)' } : {}}
+                    />
                   </div>
                   <div className="form-group">
-                    <label>{t.bookingPage.lastName} <span className="required-star">*</span></label>
-                    <input name="lastName" value={form.lastName} onChange={handle} required placeholder="Smith" />
+                    <label>
+                      {t.bookingPage.lastName} <span className="required-star">*</span>
+                      {autoFilledFields.includes('lastName') && (
+                        <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--primary)', fontWeight: 600, verticalAlign: 'middle' }}>⚡ Tự động điền</span>
+                      )}
+                    </label>
+                    <input
+                      name="lastName" value={form.lastName} onChange={handle} required placeholder="Smith"
+                      style={autoFilledFields.includes('lastName') ? { borderColor: 'var(--primary)', background: 'rgba(10,184,184,0.04)' } : {}}
+                    />
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>{t.bookingPage.email} <span className="required-star">*</span></label>
-                    <input name="email" type="email" value={form.email} onChange={handle} required placeholder="john@example.com" />
+                    <label>
+                      {t.bookingPage.email} <span className="required-star">*</span>
+                      {autoFilledFields.includes('email') && (
+                        <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--primary)', fontWeight: 600, verticalAlign: 'middle' }}>⚡ Tự động điền</span>
+                      )}
+                    </label>
+                    <input
+                      name="email" type="email" value={form.email} onChange={handle} required placeholder="john@example.com"
+                      style={autoFilledFields.includes('email') ? { borderColor: 'var(--primary)', background: 'rgba(10,184,184,0.04)' } : {}}
+                    />
                   </div>
                   <div className="form-group">
-                    <label>{t.bookingPage.phone} <span className="required-star">*</span></label>
-                    <input name="phone" type="tel" value={form.phone} onChange={handle} required placeholder="0901 234 567" />
+                    <label>
+                      {t.bookingPage.phone} <span className="required-star">*</span>
+                      {autoFilledFields.includes('phone') && (
+                        <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--primary)', fontWeight: 600, verticalAlign: 'middle' }}>⚡ Tự động điền</span>
+                      )}
+                    </label>
+                    <input
+                      name="phone" type="tel" value={form.phone} onChange={handle} required placeholder="0901 234 567"
+                      style={autoFilledFields.includes('phone') ? { borderColor: 'var(--primary)', background: 'rgba(10,184,184,0.04)' } : {}}
+                    />
                   </div>
                 </div>
 
