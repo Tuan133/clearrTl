@@ -1352,6 +1352,396 @@ select {
   cursor: default;
 }
 
+/* ===== REVIEWS PLACEHOLDER SLOTS (GIAO DIỆN KHUNG CHỜ ĐÁNH GIÁ) ===== */
+.review-placeholders-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.review-placeholders-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .review-placeholders-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .review-placeholders-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.review-card--placeholder {
+  background: rgba(255, 255, 255, 0.82);
+  border: 2px dashed rgba(10, 184, 184, 0.38);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s ease,
+              background-color 0.3s ease;
+}
+
+.review-card--placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(10, 184, 184, 0.5), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.review-card--placeholder:hover {
+  transform: translateY(-6px);
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(10, 184, 184, 0.16);
+}
+
+.review-card--placeholder:hover::before {
+  opacity: 1;
+}
+
+.placeholder-stars {
+  display: flex;
+  gap: 3px;
+}
+
+.placeholder-star-dot {
+  font-size: 16px;
+  color: #cbd5e1;
+  transition: color 0.25s ease;
+}
+
+.review-card--placeholder:hover .placeholder-star-dot {
+  color: #fbbf24;
+}
+
+.placeholder-slot-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(10, 184, 184, 0.1);
+  padding: 3px 10px;
+  border-radius: 50px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Center Action Area */
+.placeholder-center-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 0;
+}
+
+.placeholder-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(10, 184, 184, 0.08);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1.5px dashed rgba(10, 184, 184, 0.35);
+}
+
+.review-card--placeholder:hover .placeholder-icon-circle {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: transparent;
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 4px 14px rgba(10, 184, 184, 0.3);
+}
+
+.placeholder-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--primary) 0%, #0891b2 100%);
+  border: none;
+  color: #ffffff;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 22px;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(10, 184, 184, 0.25);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease;
+}
+
+.placeholder-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(10, 184, 184, 0.38);
+  opacity: 0.95;
+}
+
+.placeholder-card-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-gray);
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+  border-top: 1px dashed rgba(10, 184, 184, 0.15);
+  padding-top: 10px;
+  transition: color 0.25s ease, opacity 0.25s ease;
+}
+
+.review-card--placeholder:hover .placeholder-card-hint {
+  color: var(--primary);
+  opacity: 1;
+}
+
+.reviews-bottom-action {
+  text-align: center;
+  margin-top: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ===== REVIEW SUBMIT MODAL ===== */
+.review-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalBackdropFade 0.25s ease-out;
+}
+
+.review-modal-dialog {
+  background: #ffffff;
+  border-radius: 22px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: modalDialogZoom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes modalBackdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalDialogZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.review-modal-header {
+  background: linear-gradient(135deg, var(--primary) 0%, #0891b2 100%);
+  padding: 24px 28px 20px;
+  color: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.review-modal-title {
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.review-modal-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.review-modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.review-modal-close:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: rotate(90deg);
+}
+
+.review-modal-body {
+  padding: 24px 28px 28px;
+  background: #ffffff;
+}
+
+.review-form .form-group {
+  margin-bottom: 18px;
+}
+
+.review-form .form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin-bottom: 6px;
+}
+
+.review-form .form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text-dark);
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.review-form .form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(10, 184, 184, 0.15);
+}
+
+.review-form .form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.review-form .form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 480px) {
+  .review-form .form-row-2 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.rating-select-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.star-select-btn {
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.star-select-btn.active {
+  color: #f59e0b;
+  transform: scale(1.1);
+}
+
+.star-select-btn:hover {
+  transform: scale(1.2);
+}
+
+.rating-score-label {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.review-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.review-modal-success {
+  text-align: center;
+  padding: 20px 0 8px;
+}
+
+.review-success-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--primary) 0%, #10b981 100%);
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 700;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.review-modal-success h4 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+}
+
+.review-modal-success p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-gray);
+  max-width: 380px;
+  margin: 0 auto;
+}
+
 /* ===== WHO WE ARE ===== */
 .who-we-are {
   background: var(--bg-light);
