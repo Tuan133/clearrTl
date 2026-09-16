@@ -207,6 +207,38 @@ const Header = () => {
             </Link>
           ))}
           <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {isAuthenticated ? (
+              <div style={{ padding: '12px 14px', background: 'var(--light-blue)', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>👤</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name || user?.email}</span>
+                </div>
+                {isAdminOrStaff && (
+                  <Link to="/admin" className="btn btn-outline" style={{ justifyContent: 'center', fontSize: 12, padding: '8px 12px' }} onClick={() => setMobileOpen(false)}>
+                    Trang quản trị (Admin)
+                  </Link>
+                )}
+                <Link to="/order-history" className="btn btn-outline" style={{ justifyContent: 'center', fontSize: 12, padding: '8px 12px' }} onClick={() => setMobileOpen(false)}>
+                  Lịch sử đơn hàng
+                </Link>
+                <button
+                  className="btn btn-danger"
+                  style={{ justifyContent: 'center', fontSize: 12, padding: '8px 12px' }}
+                  onClick={() => { logout(); setMobileOpen(false); }}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            ) : (
+              <button
+                className="btn btn-outline"
+                style={{ justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                onClick={() => { navigate('/login'); setMobileOpen(false); }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
+                <span>Đăng nhập</span>
+              </button>
+            )}
             <button className="lang-btn-mobile" onClick={toggleLanguage}>
               <GlobeIcon /> Ngôn ngữ / Language: <strong>{lang === 'vi' ? 'Tiếng Việt 🇻🇳' : 'English 🇬🇧'}</strong>
             </button>
@@ -218,9 +250,7 @@ const Header = () => {
               {t.header.requestQuote}
             </button>
             <a href="tel:131546" className="btn btn-cyan" style={{ justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-              </svg>
+              <PhoneIcon />
               {t.header.phone}
             </a>
           </div>

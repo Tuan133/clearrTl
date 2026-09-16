@@ -154,9 +154,9 @@ const HomePage = () => {
                 <span className="hero-title-line">{t.hero.title3}</span>
               </h1>
               <p className="hero-subtitle">
-                <span className="hero-subtitle-line">{t.hero.sub1}</span>
-                <span className="hero-subtitle-line">{t.hero.sub2}</span>
-                <span className="hero-subtitle-line">{t.hero.sub3}</span>
+                {t.hero.sub1 && <span className="hero-subtitle-line">{t.hero.sub1}</span>}
+                {t.hero.sub2 && <span className="hero-subtitle-line">{t.hero.sub2}</span>}
+                {t.hero.sub3 && <span className="hero-subtitle-line">{t.hero.sub3}</span>}
               </p>
               <button className="hero-btn" onClick={() => navigate('/booking')}>
                 {t.hero.btnQuote}
